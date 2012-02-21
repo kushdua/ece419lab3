@@ -19,11 +19,15 @@ public class MazewarServer {
     {
         ServerSocket serverSocket = null;
         boolean listening = true;
+        int waitForNumClients=4;
 
         try {
-        	if(args.length == 1) {
+        	if(args.length == 2 || args.length == 1) {
 				//Create server socket to listen for client connection requests
         		serverSocket = new ServerSocket(Integer.parseInt(args[0]));
+        		//Second optional argument is number of clients to wait for until starting the game (default 4)
+        		if(args.length==2)
+        			waitForNumClients=Integer.parseInt(args[1]);
         	} else {
         		System.err.println("ERROR: Invalid arguments!");
         		System.exit(-1);
@@ -33,7 +37,7 @@ public class MazewarServer {
             System.exit(-1);
         }
 
-        while (listening) {
+        while (currClient!=waitForNumClients) {
         	synchronized(clients)
         	{
 				//Continuously listen for and accept client connection requests
@@ -42,11 +46,10 @@ public class MazewarServer {
 	            //Send START packets with clientID (aka seed number) to generate map
         	}
         }
+        //Exit accepting connections
+        serverSocket.close();
         
         //Send JOIN packet to all clients with their initial position (they know their own ID from START)
         
-        
-        //Exit accepting connections
-        serverSocket.close();    	
     }
 }
