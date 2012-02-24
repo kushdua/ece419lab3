@@ -7,7 +7,8 @@ public class MazewarPacket implements Serializable {
 	public static final int TYPE_MOVE_DOWN_BACKWARD=4;
 	public static final int TYPE_FIRE=5;
 	public static final int TYPE_DEAD=6;
-	public static final int TYPE_QUIT=7;
+	public static final int TYPE_SPAWN=7;
+	public static final int TYPE_QUIT=8;
 	public static final int TYPE_INVALID=-1;
 	
 	public static final int ACTION_MOVE=1;
