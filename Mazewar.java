@@ -192,6 +192,7 @@ public class Mazewar extends JFrame {
     				
     				while((packet=(MazewarPacket)(in.readObject()))!=null)
     				{
+    					System.out.println("Got packet with type="+packet.getAction());
     					if(packet.getAction()==MazewarPacket.ACTION_JOIN)
     					{
     						mazeSeed=packet.getSeed();
@@ -202,30 +203,36 @@ public class Mazewar extends JFrame {
     					}
     					else if(packet.getAction()==MazewarPacket.ACTION_START)
     					{
-    						if(ackJoined==true && clientID!=-1 && playersJoined==numplayers)
+    						System.out.println("Received start.. now ackJoined="+ackJoined+" and clientID="+clientID);
+    						if(ackJoined==true && clientID!=-1)
     						{
+    							System.out.println("Trying to init maze");
     							//Init maze
     							consolePrintLn("ECE419 Mazewar started!");
-				                
+    							System.out.println("Printed to console");
+    							
 				                // Create the maze
 				                maze = new MazeImpl(new Point(mazeWidth, mazeHeight), mazeSeed);
+    							System.out.println("Created maze");
 				                assert(maze != null);
 				                
     							//Send spawn message
 				                pts=new MazewarPacket();
 				                pts.setAction(MazewarPacket.ACTION_MOVE);
 				                pts.setType(MazewarPacket.TYPE_SPAWN);
-				                
+
+    							System.out.println("Before getting spawn point and direction");
 				                DirectedPoint dpt = maze.getNextSpawn();
 				                pts.setDir(dpt.getDirection());
 				                pts.setXpos(dpt.getX());
 				                pts.setYpos(dpt.getY());
 				                pts.setPlayerID(clientID);
 				                pts.setPlayerName(name);
-				                
+
+    							System.out.println("Before sending spawn packet");
 				                out.writeObject(pts);
 				                
-    							break;
+				                System.out.println("Created maze and sent spawn message");
     						}
     						else
     						{
@@ -236,6 +243,7 @@ public class Mazewar extends JFrame {
     					else if(packet.getAction()==MazewarPacket.ACTION_MOVE && 
     							packet.getType()==MazewarPacket.TYPE_SPAWN)
     					{
+    						System.out.println("Received spawn for client "+packet.getPlayerID());
     						if(clientID==packet.getPlayerID())
     						{
     			                // Create the GUIClient and connect it to the KeyListener queue
@@ -243,6 +251,7 @@ public class Mazewar extends JFrame {
     			                if(maze.addClient(guiClient, 
     			                			new Point(packet.getXpos(), packet.getYpos()), packet.getDir())==false)
     			                {
+    			                	System.out.println("Trying to respawn client "+clientID);
     			                	//Respawn because we couldn't add ourselves at this point... someone else is here now
     				                pts=new MazewarPacket();
     				                pts.setAction(MazewarPacket.ACTION_MOVE);
@@ -267,6 +276,12 @@ public class Mazewar extends JFrame {
     							maze.addClient(new RemoteClient(packet.getPlayerName()),
     										new Point(packet.getXpos(), packet.getYpos()), packet.getDir());
     							playersJoined++;
+    						}
+    						
+    						if(playersJoined==numplayers)
+    						{
+    							//Start game because all players have been placed
+    							break;
     						}
     					}
     				}

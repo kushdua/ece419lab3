@@ -49,6 +49,7 @@ public class MazewarServer {
         	{
 				//Continuously listen for and accept client connection requests
 	        	clients.add(currClient++,new MazewarServerHandlerThread(serverSocket.accept()));
+	        	clients.get(currClient-1).start();
         		MazewarPacket toclientpacket = new MazewarPacket();
         		toclientpacket.setAction(MazewarPacket.ACTION_JOIN);
         		toclientpacket.setSeed(seeds);
@@ -77,6 +78,7 @@ public class MazewarServer {
     		toclientpacket.setAction(MazewarPacket.ACTION_START);
     		toclientpacket.setPlayerID(i);
         	toplayer[i].writeObject(toclientpacket);
+        	System.out.println("Sent start to client "+i);
         }
 
         
@@ -93,8 +95,8 @@ public class MazewarServer {
                     //System.out.println("Queue EMPTY");
         		}
         		else{
+        			System.out.println("QUEUE IS NONEMPTY");
         			MazewarPacket toclientpacket =  (MazewarPacket) Queue.remove(topindex);
-        			toclientpacket.setAction(MazewarPacket.ACTION_MOVE);
             		//need to broadcast this packet, so send it to all the clients
             		for(int i =0;i<waitForNumClients;i++) {
                 		toplayer[i].writeObject(toclientpacket);

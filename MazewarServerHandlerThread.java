@@ -26,9 +26,11 @@ public class MazewarServerHandlerThread extends Thread {
 			ObjectInputStream fromplayer = new ObjectInputStream(socket.getInputStream());
 			MazewarPacket fromclientpacket = null;
 			while((fromclientpacket = (MazewarPacket) fromplayer.readObject())!=null){
+				System.out.println("Received packet action type = "+fromclientpacket.getAction());
 				synchronized(serverQueue)
 	        	{
 					serverQueue.add(fromclientpacket);
+					System.out.println("Added packet action type = "+fromclientpacket.getAction()+" to queue.");
 	        	}
 			}	
 		} catch (IOException e) {

@@ -475,7 +475,7 @@ public class MazeImpl extends Maze implements Serializable, ClientListener, Runn
         	DirectedPoint dp = new DirectedPoint(randomGen.nextInt(maxX),randomGen.nextInt(maxY),Direction.random());
         	Point pt = new Point(dp.getX(), dp.getY());
         	CellImpl cell = getCellImpl(pt);
-        	while(dp==null || cell.isWall(dp.getDirection()) || checkBounds(pt))
+        	while(dp==null || cell.isWall(dp.getDirection()) || checkBounds(pt)==false)
         	{
             	dp = new DirectedPoint(randomGen.nextInt(maxX),randomGen.nextInt(maxY),Direction.random());
             	pt = new Point(dp.getX(), dp.getY());
