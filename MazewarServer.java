@@ -10,7 +10,7 @@ public class MazewarServer {
 	//Global list of events received at the server
 	private static final List<MazewarServerHandlerThread> clients=Collections.synchronizedList(new ArrayList<MazewarServerHandlerThread>());
     //private static List<Socket> clientSockets = new LinkedList<Socket>();
-    private final int seeds = 42;
+    private int seeds=42;
     private final int topindex = 0;
 
 	//keeps tracks of number of clients currently joined the game
@@ -25,7 +25,7 @@ public class MazewarServer {
         ServerSocket serverSocket = null;
         boolean listening = true;
         int waitForNumClients=4;
-
+        seeds= (int) Math.random();
         try {
         	if(args.length == 2 || args.length == 1) {
 				//Create server socket to listen for client connection requests
