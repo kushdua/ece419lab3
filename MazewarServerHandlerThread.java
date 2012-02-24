@@ -15,7 +15,7 @@ public class MazewarServerHandlerThread extends Thread {
 
 	public MazewarServerHandlerThread(Socket accept) {
 		super("MazewarServerHandlerThread");
-		this.socket = socket;
+		this.socket = accept;
 		System.out.println("Created new Thread to handle remote server client");
 	}
 

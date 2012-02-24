@@ -16,7 +16,7 @@ CAT=cat
 # the rest are handled by the dependencies.
 FILES=Mazewar.class MazewarServer.class MazewarServerHandlerThread.class MazewarPacket.class
 
-all: ${FILES}
+all: clean ${FILES}
 
 # Rule for making classes.
 %.class : %.java 

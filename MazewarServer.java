@@ -55,7 +55,13 @@ public class MazewarServer {
         		toclientpacket.setPlayerID(currClient-1);
         		toclientpacket.setMaxplayer(waitForNumClients);
 	        	//initialize and get ready for game to begin soon
-	        	toplayer = new ObjectOutputStream(clients.get(currClient-1).getClientSocket().getOutputStream());
+/*      		if(toplayer==null)
+        			System.out.println("topplayer is null");
+        		if(clients.get(currClient-1)==null)
+        			System.out.println("clients.get(currClient-1) is null");
+        		if(clients.get(currClient-1).getClientSocket()==null)
+        			System.out.println("clients.get(currClient-1).getClientSocket() is null");
+*/	        	toplayer = new ObjectOutputStream(clients.get(currClient-1).getClientSocket().getOutputStream());
 	        	toplayer.writeObject(toclientpacket);
 	        	//clients.get(currClient-1).start();
 	            //Send START packets with clientID (aka seed number) to generate map
