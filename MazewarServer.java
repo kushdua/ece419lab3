@@ -91,7 +91,7 @@ public class MazewarServer {
         	synchronized(Queue) {
         		if(Queue.isEmpty()){
         			// relaxing time ... nothing left to do
-                    System.out.println("Queue EMPTY");
+                    //System.out.println("Queue EMPTY");
         		}
         		else{
         			MazewarPacket toclientpacket =  (MazewarPacket) Queue.remove(topindex);
