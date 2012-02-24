@@ -16,14 +16,14 @@ public class MazewarPacket implements Serializable {
 	
 	public static final int ID_INVALID=-1;
 	
-	private int action=ACTION_INVALID;
-	private int type=TYPE_INVALID;
-	private int playerID=ID_INVALID;
-	private String playerName="";
+	public int action=ACTION_INVALID;
+	public int type=TYPE_INVALID;
+	public int playerID=ID_INVALID;
+	public String playerName="";
 	
-	private int seed;
+	public int seed;
 
-	private int xpos;
-	private int ypos;
-	private Direction dir;
+	public int xpos;
+	public int ypos;
+	public Direction dir;
 }

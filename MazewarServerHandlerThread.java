@@ -26,5 +26,9 @@ public class MazewarServerHandlerThread extends Thread {
 		//Check if index exists in queue and send that packet (don't remove it... MazewarServer does that)
 		return false;
 	}
+	
+    public Socket getClientSocket() {
+        return socket;
+    }
 
 }
