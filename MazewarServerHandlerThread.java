@@ -1,3 +1,6 @@
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -16,15 +19,30 @@ public class MazewarServerHandlerThread extends Thread {
 		System.out.println("Created new Thread to handle remote server client");
 	}
 
-	public void start() {
-		//Handle incoming packet, change type and whatever, and add it to queue of events to process
+	public void run() {
+		//Handle incoming packet and add it to queue of events to process
 		//Mazewar server would send that packet
+        try {
+			ObjectInputStream fromplayer = new ObjectInputStream(socket.getInputStream());
+			MazewarPacket fromclientpacket = (MazewarPacket) fromplayer.readObject();
+			while(fromclientpacket!=null){
+				synchronized(serverQueue)
+	        	{
+					serverQueue.add(fromclientpacket);
+	        	}
+			}	
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (ClassNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}	
 	}
 	
-	public boolean sendPacket(int queueIndex)
-	{
-		//Check if index exists in queue and send that packet (don't remove it... MazewarServer does that)
-		return false;
-	}
+
+    public Socket getClientSocket() {
+        return socket;
+    }
 
 }
