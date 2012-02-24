@@ -27,4 +27,68 @@ public class MazewarPacket implements Serializable {
 	private int xpos;
 	private int ypos;
 	private Direction dir;
+
+	public void setAction(int action) {
+		this.action = action;
+	}
+	
+	public int getAction() {
+		return action;
+	}
+	
+	public void setType(int type) {
+		this.type = type;
+	}
+	
+	public int getType() {
+		return type;
+	}
+
+	public void setPlayerID(int playerID) {
+		this.playerID = playerID;
+	}
+
+	public int getPlayerID() {
+		return playerID;
+	}
+
+	public void setPlayerName(String playerName) {
+		this.playerName = playerName;
+	}
+
+	public String getPlayerName() {
+		return playerName;
+	}
+
+	public void setSeed(int seed) {
+		this.seed = seed;
+	}
+
+	public int getSeed() {
+		return seed;
+	}
+
+	public void setXpos(int xpos) {
+		this.xpos = xpos;
+	}
+
+	public int getXpos() {
+		return xpos;
+	}
+
+	public void setYpos(int ypos) {
+		this.ypos = ypos;
+	}
+
+	public int getYpos() {
+		return ypos;
+	}
+
+	public void setDir(Direction dir) {
+		this.dir = dir;
+	}
+
+	public Direction getDir() {
+		return dir;
+	}	
 }
