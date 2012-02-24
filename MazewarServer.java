@@ -11,6 +11,7 @@ public class MazewarServer {
 	private static final List<MazewarServerHandlerThread> clients=Collections.synchronizedList(new ArrayList<MazewarServerHandlerThread>());
     //private static List<Socket> clientSockets = new LinkedList<Socket>();
     private final int seeds = 42;
+    private final int topindex = 0;
 
 	//keeps tracks of number of clients currently joined the game
 	private int currClient=0;
@@ -42,35 +43,60 @@ public class MazewarServer {
         }
 
         
-        ObjectOutputStream player=null;
+        ObjectOutputStream toplayer=null;
         while (currClient!=waitForNumClients) {
         	synchronized(clients)
         	{
 				//Continuously listen for and accept client connection requests
 	        	clients.add(currClient++,new MazewarServerHandlerThread(serverSocket.accept()));
-        		MazewarPacket clientpacket = new MazewarPacket();
-        		clientpacket.action = MazewarPacket.ACTION_JOIN;
-	        	clientpacket.seed = seeds;
+        		MazewarPacket toclientpacket = new MazewarPacket();
+        		toclientpacket.setAction(MazewarPacket.ACTION_JOIN);
+        		toclientpacket.setSeed(seeds);
+        		toclientpacket.setPlayerID(currClient-1);
+        		toclientpacket.setMaxplayer(waitForNumClients);
 	        	//initialize and get ready for game to begin soon
-	        	player = new ObjectOutputStream(clients.get(currClient-1).getClientSocket().getOutputStream());
-	        	player.writeObject(clientpacket);
-	        	clients.get(currClient-1).start();
+	        	toplayer = new ObjectOutputStream(clients.get(currClient-1).getClientSocket().getOutputStream());
+	        	toplayer.writeObject(toclientpacket);
+	        	//clients.get(currClient-1).start();
 	            //Send START packets with clientID (aka seed number) to generate map
         	}
         }//Exit accepting connections
         
         /*
          * At this point of time all the clients have received the seed number and are ready to START the game
+         * the for loop command all the clients to START
          */
+        for(int i =0;i<waitForNumClients;i++) {
+        	MazewarPacket clientpacket = new MazewarPacket();
+    		clientpacket.setAction(MazewarPacket.ACTION_START);
+    		clientpacket.setPlayerID(i);
+    		toplayer = new ObjectOutputStream(clients.get(currClient-1).getClientSocket().getOutputStream());
+        	toplayer.writeObject(clientpacket);
+        }
 
+        
+		/*
+		 *  At this point the game has started and any change made by any client has started recording in
+		 *  Queue i.e. in the arraylist <serverQueue> and the topmost packet needs to be broadcasted to 
+		 *  all the clients
+		 */
         List<MazewarPacket> Queue = MazewarServerHandlerThread.serverQueue;
         while (listening) {
-        		/*
-        		 *  At this point the game has started and any change made by any client should be recorded
-        		 *  in the arraylist <serverQueue> and the packet recording that information should be send to 
-        		 *  all the clients to make the respective necessary moves
-        		 */
-
+        	synchronized(Queue) {
+        		if(Queue.isEmpty()){
+        			// relaxing time ... nothing left to do
+                    System.out.println("Queue EMPTY");
+        		}
+        		else{
+        			MazewarPacket toclientpacket =  (MazewarPacket) Queue.remove(topindex);
+        			toclientpacket.setAction(MazewarPacket.ACTION_MOVE);
+            		//need to broadcast this packet, so send it to all the clients
+            		for(int i =0;i<waitForNumClients;i++) {
+                		toplayer = new ObjectOutputStream(clients.get(i).getClientSocket().getOutputStream());
+                		toplayer.writeObject(toclientpacket);
+            		}
+        		}	
+        	}
         }
         serverSocket.close();
         

@@ -28,6 +28,9 @@ import java.awt.GridBagConstraints;
 import javax.swing.BorderFactory;
 import java.io.Serializable;
 
+import java.io.*;
+import java.net.*;
+
 /**
  * The entry point and glue code for the game.  It also contains some helpful
  * global utility methods.
@@ -52,7 +55,7 @@ public class Mazewar extends JFrame {
          * All implementations of the same protocol must use 
          * the same seed value, or your mazes will be different.
          */
-        private final int mazeSeed = 42;
+        private int mazeSeed = 42;
 
         /**
          * The {@link Maze} that the game uses.
@@ -63,6 +66,11 @@ public class Mazewar extends JFrame {
          * The {@link GUIClient} for the game.
          */
         private GUIClient guiClient = null;
+        
+        /**
+         * ID for this client (as returned from server)
+         */
+        private int clientID = -1;
 
         /**
          * The panel that displays the {@link Maze}.
@@ -80,6 +88,21 @@ public class Mazewar extends JFrame {
          * the static consolePrint methods  
          */
         private static final JTextPane console = new JTextPane();
+        
+        /**
+         * Server address command line parameter
+         */
+        private String serverAddress="";
+        
+        /**
+         * Server port command line parameter
+         */
+        private int serverPort=0;
+        
+        /**
+         * Client socket for communication with server
+         */
+        private Socket clientSocket=null;
       
         /** 
          * Write a message to the console followed by a newline.
@@ -119,8 +142,75 @@ public class Mazewar extends JFrame {
         /** 
          * The place where all the pieces are put together. 
          */
-        public Mazewar() {
-                super("ECE419 Mazewar");
+        public Mazewar(String args[]) {
+
+        		super("ECE419 Mazewar");
+
+	    		if(args.length!=2)
+	    		{
+	    			System.out.println("Usage: java Mazewar <server address> <server port>");
+	    			System.exit(-1);
+	    		}
+	    		else
+	    		{
+	    			serverAddress=args[0];
+	    			serverPort=Integer.parseInt(args[1]);
+	    		}
+	    		
+                
+                // Throw up a dialog to get the GUIClient name.
+                String name = JOptionPane.showInputDialog("Enter your name");
+                if((name == null) || (name.length() == 0)) {
+                  Mazewar.quit();
+                }
+
+                // You may want to put your network initialization code somewhere in
+                // here.
+    			try
+    			{
+    				ObjectOutputStream out = null;
+    				ObjectInputStream in = null;
+    				if(clientSocket!=null)
+    				{
+    					clientSocket.close();
+    				}
+    	
+    				clientSocket = new Socket(serverAddress, serverPort);
+    	
+    				out = new ObjectOutputStream(clientSocket.getOutputStream());
+    				in = new ObjectInputStream(clientSocket.getInputStream());
+    				
+    				MazewarPacket packet=null;
+    				boolean ackJoined=false;
+    				while((packet=(MazewarPacket)(in.readObject()))!=null)
+    				{
+    					if(packet.getAction()==MazewarPacket.ACTION_JOIN)
+    					{
+    						mazeSeed=packet.getSeed();
+    						clientID=packet.getPlayerID();
+    						ackJoined=true;
+    					}
+    					else if(packet.getAction()==MazewarPacket.ACTION_START)
+    					{
+    						if(ackJoined==true && clientID!=-1)
+    						{
+    							break;
+    						}
+    						else
+    						{
+    							System.err.println("Unknown error in starting the game. Join message not received most probably.");
+    							System.exit(-1);
+    						}
+    					}
+    				}
+    			} catch (IOException e) {
+    				e.printStackTrace();
+                	System.err.println("Error in joining and starting the game. Exiting...");
+                	System.exit(-1);
+				} catch (ClassNotFoundException e) {
+					e.printStackTrace();
+				}    			
+
                 consolePrintLn("ECE419 Mazewar started!");
                 
                 // Create the maze
@@ -131,16 +221,7 @@ public class Mazewar extends JFrame {
                 // out how to adjust scores.
                 ScoreTableModel scoreModel = new ScoreTableModel();
                 assert(scoreModel != null);
-                maze.addMazeListener(scoreModel);
-                
-                // Throw up a dialog to get the GUIClient name.
-                String name = JOptionPane.showInputDialog("Enter your name");
-                if((name == null) || (name.length() == 0)) {
-                  Mazewar.quit();
-                }
-                
-                // You may want to put your network initialization code somewhere in
-                // here.
+                maze.addMazeListener(scoreModel);            
                 
                 // Create the GUIClient and connect it to the KeyListener queue
                 guiClient = new GUIClient(name);
@@ -221,9 +302,9 @@ public class Mazewar extends JFrame {
          * Entry point for the game.  
          * @param args Command-line arguments.
          */
-        public static void main(String args[]) {
-
+        public static void main(String args[]) {      			
+        	
                 /* Create the GUI */
-                new Mazewar();
+                new Mazewar(args);
         }
 }

@@ -43,7 +43,7 @@ import java.util.HashMap;
  */
 
 public class MazeImpl extends Maze implements Serializable, ClientListener, Runnable {
-
+	
         /**
          * Create a {@link Maze}.
          * @param point Treat the {@link Point} as a magintude specifying the
