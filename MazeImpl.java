@@ -436,6 +436,54 @@ public class MazeImpl extends Maze implements Serializable, ClientListener, Runn
                 notifyClientAdd(client);
         }
         
+        
+        /**
+         * Try to add a client at specified position in maze. Return true if successful, false if not.
+         * @param client	Client to add in maze
+         * @param point		Point in maze to add new client in the maze
+         * @return			True if successful, false if not
+         */
+        public synchronized boolean addClient(Client client, Point point, Direction d) {
+            assert(client != null);
+            assert(checkBounds(point));
+            CellImpl cell = getCellImpl(point);
+            if(cell==null)
+            {
+            	return false;
+            }
+            
+            while(cell.isWall(d)) {
+              return false;
+            }
+            
+            cell.setContents(client);
+            clientMap.put(client, new DirectedPoint(point, d));
+            client.registerMaze(this);
+            client.addClientListener(this);
+            update();
+            notifyClientAdd(client);
+            
+            return true;
+        }
+        
+        /**
+         * Return new spawn point calculated from random variable.
+         * @return	New Spawn point (X and Y coordinates in maze)
+         */
+        public synchronized DirectedPoint getNextSpawn()
+        {
+        	DirectedPoint dp = new DirectedPoint(randomGen.nextInt(maxX),randomGen.nextInt(maxY),Direction.random());
+        	Point pt = new Point(dp.getX(), dp.getY());
+        	CellImpl cell = getCellImpl(pt);
+        	while(dp==null || cell.isWall(dp.getDirection()) || checkBounds(pt))
+        	{
+            	dp = new DirectedPoint(randomGen.nextInt(maxX),randomGen.nextInt(maxY),Direction.random());
+            	pt = new Point(dp.getX(), dp.getY());
+            	cell = getCellImpl(pt);
+        	}
+        	return dp;
+        }
+        
         /**
          * Internal helper for handling the death of a {@link Client}.
          * @param source The {@link Client} that fired the projectile.

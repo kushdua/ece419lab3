@@ -73,6 +73,11 @@ public class Mazewar extends JFrame {
         private int clientID = -1;
 
         /**
+         * Number of players to wait for (to display) before starting the game (as passed in from server).
+         */
+        private int numplayers=0;
+        
+        /**
          * The panel that displays the {@link Maze}.
          */
         private OverheadMazePanel overheadPanel = null;
@@ -181,25 +186,87 @@ public class Mazewar extends JFrame {
     				in = new ObjectInputStream(clientSocket.getInputStream());
     				
     				MazewarPacket packet=null;
+    				MazewarPacket pts=null;
     				boolean ackJoined=false;
+    				int playersJoined=0;
+    				
     				while((packet=(MazewarPacket)(in.readObject()))!=null)
     				{
     					if(packet.getAction()==MazewarPacket.ACTION_JOIN)
     					{
     						mazeSeed=packet.getSeed();
     						clientID=packet.getPlayerID();
+    						numplayers=packet.getMaxplayer();
     						ackJoined=true;
+    						System.out.println("Client joined the game. Waiting for other players to join before starting...");
     					}
     					else if(packet.getAction()==MazewarPacket.ACTION_START)
     					{
-    						if(ackJoined==true && clientID!=-1)
+    						if(ackJoined==true && clientID!=-1 && playersJoined==numplayers)
     						{
+    							//Init maze
+    							consolePrintLn("ECE419 Mazewar started!");
+				                
+				                // Create the maze
+				                maze = new MazeImpl(new Point(mazeWidth, mazeHeight), mazeSeed);
+				                assert(maze != null);
+				                
+    							//Send spawn message
+				                pts=new MazewarPacket();
+				                pts.setAction(MazewarPacket.ACTION_MOVE);
+				                pts.setType(MazewarPacket.TYPE_SPAWN);
+				                
+				                DirectedPoint dpt = maze.getNextSpawn();
+				                pts.setDir(dpt.getDirection());
+				                pts.setXpos(dpt.getX());
+				                pts.setYpos(dpt.getY());
+				                pts.setPlayerID(clientID);
+				                pts.setPlayerName(name);
+				                
+				                out.writeObject(pts);
+				                
     							break;
     						}
     						else
     						{
     							System.err.println("Unknown error in starting the game. Join message not received most probably.");
     							System.exit(-1);
+    						}
+    					}
+    					else if(packet.getAction()==MazewarPacket.ACTION_MOVE && 
+    							packet.getType()==MazewarPacket.TYPE_SPAWN)
+    					{
+    						if(clientID==packet.getPlayerID())
+    						{
+    			                // Create the GUIClient and connect it to the KeyListener queue
+    			                guiClient = new GUIClient(packet.getPlayerName());
+    			                if(maze.addClient(guiClient, 
+    			                			new Point(packet.getXpos(), packet.getYpos()), packet.getDir())==false)
+    			                {
+    			                	//Respawn because we couldn't add ourselves at this point... someone else is here now
+    				                pts=new MazewarPacket();
+    				                pts.setAction(MazewarPacket.ACTION_MOVE);
+    				                pts.setType(MazewarPacket.TYPE_SPAWN);
+    				                
+    				                DirectedPoint dpt = maze.getNextSpawn();
+    				                pts.setDir(dpt.getDirection());
+    				                pts.setXpos(dpt.getX());
+    				                pts.setYpos(dpt.getY());
+    				                pts.setPlayerID(clientID);
+    				                pts.setPlayerName(name);
+    				                
+    				                out.writeObject(pts);
+    				                continue;
+    			                }
+    			                this.addKeyListener(guiClient);
+    			                playersJoined++;
+    						}
+    						else
+    						{
+    							//TODO: Store RemoteClients in a list somewhere?
+    							maze.addClient(new RemoteClient(packet.getPlayerName()),
+    										new Point(packet.getXpos(), packet.getYpos()), packet.getDir());
+    							playersJoined++;
     						}
     					}
     				}
@@ -209,34 +276,13 @@ public class Mazewar extends JFrame {
                 	System.exit(-1);
 				} catch (ClassNotFoundException e) {
 					e.printStackTrace();
-				}    			
-
-                consolePrintLn("ECE419 Mazewar started!");
-                
-                // Create the maze
-                maze = new MazeImpl(new Point(mazeWidth, mazeHeight), mazeSeed);
-                assert(maze != null);
+				}
                 
                 // Have the ScoreTableModel listen to the maze to find
                 // out how to adjust scores.
                 ScoreTableModel scoreModel = new ScoreTableModel();
                 assert(scoreModel != null);
-                maze.addMazeListener(scoreModel);            
-                
-                // Create the GUIClient and connect it to the KeyListener queue
-                guiClient = new GUIClient(name);
-                maze.addClient(guiClient);
-                this.addKeyListener(guiClient);
-                
-                // Use braces to force constructors not to be called at the beginning of the
-                // constructor.
-                {
-                        maze.addClient(new RobotClient("Norby"));
-                        maze.addClient(new RobotClient("Robbie"));
-                        maze.addClient(new RobotClient("Clango"));
-                        maze.addClient(new RobotClient("Marvin"));
-                }
-
+                maze.addMazeListener(scoreModel);
                 
                 // Create the panel that will display the maze.
                 overheadPanel = new OverheadMazePanel(maze, guiClient);

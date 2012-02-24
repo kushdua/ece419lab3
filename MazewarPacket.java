@@ -21,6 +21,7 @@ public class MazewarPacket implements Serializable {
 	private int action=ACTION_INVALID;
 	private int type=TYPE_INVALID;
 	private int playerID=ID_INVALID;
+	private int maxplayer = 0;
 	private String playerName="";
 	
 	private int seed;
@@ -91,5 +92,13 @@ public class MazewarPacket implements Serializable {
 
 	public Direction getDir() {
 		return dir;
+	}
+
+	public void setMaxplayer(int maxplayer) {
+		this.maxplayer = maxplayer;
+	}
+
+	public int getMaxplayer() {
+		return maxplayer;
 	}	
 }

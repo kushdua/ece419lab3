@@ -57,6 +57,20 @@ public abstract class Maze {
      * @param client {@link Client} to be added to the {@link Maze}.
      */
     public abstract void addClient(Client client);
+    
+    /**
+     * Try to add a client at specified position in maze. Return true if successful, false if not.
+     * @param client	Client to add in maze
+     * @param point		Point in maze to add new client in the maze
+     * @return			True if successful, false if not
+     */
+    public abstract boolean addClient(Client client, Point point, Direction d);
+    
+    /**
+     * Return new spawn point calculated from random variable.
+     * @return	New Spawn point (X and Y coordinates in maze)
+     */
+    public abstract DirectedPoint getNextSpawn();
 
     /** 
      * Create a new {@link Projectile} from the specified {@link Client}
