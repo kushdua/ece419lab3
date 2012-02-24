@@ -24,8 +24,8 @@ public class MazewarServerHandlerThread extends Thread {
 		//Mazewar server would send that packet
         try {
 			ObjectInputStream fromplayer = new ObjectInputStream(socket.getInputStream());
-			MazewarPacket fromclientpacket = (MazewarPacket) fromplayer.readObject();
-			while(fromclientpacket!=null){
+			MazewarPacket fromclientpacket = null;
+			while((fromclientpacket = (MazewarPacket) fromplayer.readObject())!=null){
 				synchronized(serverQueue)
 	        	{
 					serverQueue.add(fromclientpacket);

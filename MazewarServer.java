@@ -43,7 +43,7 @@ public class MazewarServer {
         }
 
         
-        ObjectOutputStream toplayer=null;
+        ObjectOutputStream[] toplayer  = new ObjectOutputStream[waitForNumClients];
         while (currClient!=waitForNumClients) {
         	synchronized(clients)
         	{
@@ -61,8 +61,8 @@ public class MazewarServer {
         			System.out.println("clients.get(currClient-1) is null");
         		if(clients.get(currClient-1).getClientSocket()==null)
         			System.out.println("clients.get(currClient-1).getClientSocket() is null");
-*/	        	toplayer = new ObjectOutputStream(clients.get(currClient-1).getClientSocket().getOutputStream());
-	        	toplayer.writeObject(toclientpacket);
+*/	        	toplayer[currClient-1] = new ObjectOutputStream(clients.get(currClient-1).getClientSocket().getOutputStream());
+	        	toplayer[currClient-1].writeObject(toclientpacket);
 	        	//clients.get(currClient-1).start();
 	            //Send START packets with clientID (aka seed number) to generate map
         	}
@@ -73,11 +73,10 @@ public class MazewarServer {
          * the for loop command all the clients to START
          */
         for(int i =0;i<waitForNumClients;i++) {
-        	MazewarPacket clientpacket = new MazewarPacket();
-    		clientpacket.setAction(MazewarPacket.ACTION_START);
-    		clientpacket.setPlayerID(i);
-    		toplayer = new ObjectOutputStream(clients.get(currClient-1).getClientSocket().getOutputStream());
-        	toplayer.writeObject(clientpacket);
+        	MazewarPacket toclientpacket = new MazewarPacket();
+    		toclientpacket.setAction(MazewarPacket.ACTION_START);
+    		toclientpacket.setPlayerID(i);
+        	toplayer[i].writeObject(toclientpacket);
         }
 
         
@@ -98,8 +97,7 @@ public class MazewarServer {
         			toclientpacket.setAction(MazewarPacket.ACTION_MOVE);
             		//need to broadcast this packet, so send it to all the clients
             		for(int i =0;i<waitForNumClients;i++) {
-                		toplayer = new ObjectOutputStream(clients.get(i).getClientSocket().getOutputStream());
-                		toplayer.writeObject(toclientpacket);
+                		toplayer[i].writeObject(toclientpacket);
             		}
         		}	
         	}
