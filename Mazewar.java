@@ -181,12 +181,26 @@ public class Mazewar extends JFrame {
     				in = new ObjectInputStream(clientSocket.getInputStream());
     				
     				MazewarPacket packet=null;
+    				boolean ackJoined=false;
     				while((packet=(MazewarPacket)(in.readObject()))!=null)
     				{
     					if(packet.getAction()==MazewarPacket.ACTION_JOIN)
     					{
     						mazeSeed=packet.getSeed();
     						clientID=packet.getPlayerID();
+    						ackJoined=true;
+    					}
+    					else if(packet.getAction()==MazewarPacket.ACTION_START)
+    					{
+    						if(ackJoined==true && clientID!=-1)
+    						{
+    							break;
+    						}
+    						else
+    						{
+    							System.err.println("Unknown error in starting the game. Join message not received most probably.");
+    							System.exit(-1);
+    						}
     					}
     				}
     			} catch (IOException e) {

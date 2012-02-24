@@ -13,6 +13,7 @@ public class MazewarPacket implements Serializable {
 	
 	public static final int ACTION_MOVE=1;
 	public static final int ACTION_JOIN=2;
+	public static final int ACTION_START=3;
 	public static final int ACTION_INVALID=-1;
 	
 	public static final int ID_INVALID=-1;
