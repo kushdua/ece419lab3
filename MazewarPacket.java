@@ -1,6 +1,5 @@
 import java.io.Serializable;
 
-
 public class MazewarPacket implements Serializable {
 	public static final int TYPE_MOVE_LEFT=1;
 	public static final int TYPE_MOVE_RIGHT=2;
@@ -20,6 +19,7 @@ public class MazewarPacket implements Serializable {
 	private int action=ACTION_INVALID;
 	private int type=TYPE_INVALID;
 	private int playerID=ID_INVALID;
+	private String playerName="";
 	
 	private int seed;
 
