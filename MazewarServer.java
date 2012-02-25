@@ -86,7 +86,7 @@ public class MazewarServer {
                     //System.out.println("Queue EMPTY");
         		}
         		else{
-        			System.out.println("QUEUE IS NONEMPTY");
+        			//System.out.println("QUEUE IS NONEMPTY");
         			MazewarPacket toclientpacket =  (MazewarPacket) Queue.remove(topindex);
             		//need to broadcast this packet, so send it to all the clients
             		for(int i =0;i<waitForNumClients;i++) {

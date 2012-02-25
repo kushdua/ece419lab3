@@ -216,6 +216,7 @@ public class MazeImpl extends Maze implements Serializable, ClientListener, Runn
         public synchronized Direction getClientOrientation(Client client) {
                 assert(client != null);
                 Object o = clientMap.get(client);
+                if(o==null)return null;
                 assert(o instanceof DirectedPoint);
                 DirectedPoint dp = (DirectedPoint)o;
                 return dp.getDirection();
@@ -285,6 +286,7 @@ public class MazeImpl extends Maze implements Serializable, ClientListener, Runn
         public synchronized boolean moveClientForward(Client client) {
                 assert(client != null);
                 Object o = clientMap.get(client);
+                if(o==null)return false;
                 assert(o instanceof DirectedPoint);
                 DirectedPoint dp = (DirectedPoint)o;
                 return moveClient(client, dp.getDirection());
@@ -293,6 +295,7 @@ public class MazeImpl extends Maze implements Serializable, ClientListener, Runn
         public synchronized boolean moveClientBackward(Client client) {
                 assert(client != null);
                 Object o = clientMap.get(client);
+                if(o==null)return false;
                 assert(o instanceof DirectedPoint);
                 DirectedPoint dp = (DirectedPoint)o;
                 return moveClient(client, dp.getDirection().invert());
@@ -339,8 +342,11 @@ public class MazeImpl extends Maze implements Serializable, ClientListener, Runn
                                         while(it.hasNext()) {   
                                                 Object o = it.next();
                                                 assert(o instanceof Projectile);
-                                                deadPrj.addAll(moveProjectile((Projectile)o));
-                                        }               
+                                                if(deadPrj.contains(o)==false)
+                                                {
+                                                	deadPrj.addAll(moveProjectile((Projectile)o));
+                                                }
+                                        }
                                         it = deadPrj.iterator();
                                         while(it.hasNext()) {
                                                 Object o = it.next();
@@ -504,6 +510,7 @@ public class MazeImpl extends Maze implements Serializable, ClientListener, Runn
                 Object o = clientMap.remove(target);
                 assert(o instanceof Point);
                 Point point = (Point)o;
+                System.out.println("Removing killed player from ("+point.getX()+","+point.getY()+").");
                 CellImpl cell = getCellImpl(point);
                 cell.setContents(null);
                 // Pick a random starting point, and check to see if it is already occupied
@@ -520,23 +527,52 @@ public class MazeImpl extends Maze implements Serializable, ClientListener, Runn
                 }
                 cell.setContents(target);
                 clientMap.put(target, new DirectedPoint(point, d));
-                */update();
+                */
+                if(target instanceof GUIClient)
+                {
+                	try {
+						Mazewar.sendSpawn();
+					} catch (IOException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+                }
+                update();
                 notifyClientKilled(source, target);
         }
         
         public synchronized boolean respawnClient(Client source, Point point, Direction d)
         {
+        	//Wait until source is killed before replacing it in our local map... maybe other client's
+        	//timer was really fast and we received the respawn message before we processed our local kill
+        	boolean printedMsg=false;
+        	while(clientMap.containsKey(source))
+        	{
+        		if(printedMsg==false)
+        		{
+        			System.out.println("Yielding until client is killed by projectile in play before respawning it.");
+        		}
+        		printedMsg=true;
+        		Thread.yield();
+        	}
+        	
             CellImpl cell = getCellImpl(point);
             // Repeat until we find an empty cell
             if(cell.getContents() != null || cell.isWall(d)) {
             	return false;
             }
             cell.setContents(source);
+            System.out.println("Respawned client at ("+point.getX()+","+point.getY()+").");
             clientMap.put(source, new DirectedPoint(point, 
             		(d.equals(Direction.North)?Direction.North:
             			(d.equals(Direction.East)?Direction.East:
             				(d.equals(Direction.South)?Direction.South:Direction.West)))
             				));
+            System.out.println("Client map contains our respawned client at ("+
+            		((DirectedPoint)(clientMap.get(source))).getX()+"."+
+            		((DirectedPoint)(clientMap.get(source))).getY()+") facing "+
+            		((DirectedPoint)(clientMap.get(source))).getDirection().toString());
+            update();
         	return true;
         }
         
@@ -547,6 +583,7 @@ public class MazeImpl extends Maze implements Serializable, ClientListener, Runn
         private synchronized void rotateClientLeft(Client client) {
                 assert(client != null);
                 Object o = clientMap.get(client);
+                if(o==null)return;
                 assert(o instanceof DirectedPoint);
                 DirectedPoint dp = (DirectedPoint)o;
                 clientMap.put(client, new DirectedPoint(dp, dp.getDirection().turnLeft()));
@@ -560,6 +597,7 @@ public class MazeImpl extends Maze implements Serializable, ClientListener, Runn
         private synchronized void rotateClientRight(Client client) {
                 assert(client != null);
                 Object o = clientMap.get(client);
+                if(o==null)return;
                 assert(o instanceof DirectedPoint);
                 DirectedPoint dp = (DirectedPoint)o;
                 clientMap.put(client, new DirectedPoint(dp, dp.getDirection().turnRight()));

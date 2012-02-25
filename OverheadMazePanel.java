@@ -157,10 +157,13 @@ public class OverheadMazePanel extends JPanel implements MazeListener {
                 for(int i = 0; i < p.getY(); i++) {
                         for(int j = 0; j < p.getX(); j++) {
                                 boolean cellVisible = true;
-                                Line2D visLine = new Line2D.Double(llx + (cp.getX() + 0.5)*cellwidth,
+                                if(cp!=null)
+                                {
+                                	Line2D visLine = new Line2D.Double(llx + (cp.getX() + 0.5)*cellwidth,
                                                                   lly + (cp.getY() + 0.5)*cellheight,
                                                                   llx + (j + 0.5)*cellwidth,
                                                                   lly + (i + 0.5)*cellheight);
+                                }
 
                                 /* Visibility testing */
                                 /* Iterator visIt = wallList.iterator();

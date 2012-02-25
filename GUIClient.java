@@ -46,7 +46,12 @@ public class GUIClient extends LocalClient implements KeyListener {
                 if((e.getKeyChar() == 'q') || (e.getKeyChar() == 'Q')) {
                 		//TODO: Assume clients cannot quit.. as answered on discussion board
                 		// but leave it in for now, as dynamic leave should work in our game
-                    	Mazewar.quit();
+                		try {
+							Mazewar.sendLeave();
+						} catch (IOException e1) {
+							// TODO Auto-generated catch block
+							e1.printStackTrace();
+						}
                 // Up-arrow moves forward.
                 } else if(e.getKeyCode() == KeyEvent.VK_UP) {
                 		//Send packet with move forward maybe just put it here.. then call forward when you recv in MW

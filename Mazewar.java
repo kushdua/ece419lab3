@@ -220,6 +220,8 @@ public class Mazewar extends JFrame {
     				
     				while((packet=(MazewarPacket)(in.readObject()))!=null)
     				{
+    					System.out.println("Received packet of action="+packet.getAction()+" and type="+packet.getType()+
+    							" and I have spawned only "+(playersJoined+1)+" out of "+numplayers+" players.");
     					if(packet.getAction()==MazewarPacket.ACTION_JOIN)
     					{
     						mazeSeed=packet.getSeed();
@@ -328,38 +330,44 @@ public class Mazewar extends JFrame {
     						}
     					}
     				}
-    				
+System.out.println("1");    				
                     // Create the panel that will display the maze.
                     overheadPanel = new OverheadMazePanel(maze, guiClient);
                     assert(overheadPanel != null);
                     maze.addMazeListener(overheadPanel);
-                    
+
+System.out.println("2");                      
                     // Don't allow editing the console from the GUI
                     console.setEditable(false);
                     console.setFocusable(false);
                     console.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder()));
-                   
+
+System.out.println("3");                      
                     // Allow the console to scroll by putting it in a scrollpane
                     JScrollPane consoleScrollPane = new JScrollPane(console);
                     assert(consoleScrollPane != null);
                     consoleScrollPane.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(), "Console"));
-                    
+
+System.out.println("4");                       
                     // Create the score table
                     scoreTable = new JTable(scoreModel);
                     assert(scoreTable != null);
                     scoreTable.setFocusable(false);
                     scoreTable.setRowSelectionAllowed(false);
 
+System.out.println("5");   
                     // Allow the score table to scroll too.
                     JScrollPane scoreScrollPane = new JScrollPane(scoreTable);
                     assert(scoreScrollPane != null);
                     scoreScrollPane.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(), "Scores"));
-                    
+
+System.out.println("6");                       
                     // Create the layout manager
                     GridBagLayout layout = new GridBagLayout();
                     GridBagConstraints c = new GridBagConstraints();
                     getContentPane().setLayout(layout);
-                    
+
+System.out.println("7");   
                     // Define the constraints on the components.
                     c.fill = GridBagConstraints.BOTH;
                     c.weightx = 1.0;
@@ -373,20 +381,25 @@ public class Mazewar extends JFrame {
                     c.gridwidth = GridBagConstraints.REMAINDER;
                     c.weightx = 1.0;
                     layout.setConstraints(scoreScrollPane, c);
-                                    
+
+System.out.println("8");   
                     // Add the components
                     getContentPane().add(overheadPanel);
                     getContentPane().add(consoleScrollPane);
                     getContentPane().add(scoreScrollPane);
-                    
+
+System.out.println("9");   
                     // Pack everything neatly.
                     pack();
 
+System.out.println("10");   
                     // Let the magic begin.
                     setVisible(true);
                     overheadPanel.repaint();
+System.out.println("11");   
                     this.requestFocusInWindow();
-
+System.out.println("12");   
+System.out.println("Created and hopefully displayed maze");
 					//Listen for events and perform appropriate GUI update action
     				while((packet=(MazewarPacket)(in.readObject()))!=null)
     				{
@@ -440,28 +453,40 @@ public class Mazewar extends JFrame {
     								//Create or move projectile
     							}*/
     						}
+        					else if(packet.getType()==MazewarPacket.TYPE_SPAWN)
+        					{
+        						//System.out.println("Received spawn for client "+packet.getPlayerID());
+        						if(clientID==packet.getPlayerID())
+        						{
+        							System.out.println("Trying to respawn GUIClient");
+        							//TODO: Update GUIClient with new spawn position
+        							if(maze.respawnClient(clients.get(clientID), 
+        									new Point(packet.getXpos(), packet.getYpos()),
+        									new Direction(packet.getDir()))==false)
+        							{
+        								//Try to respawn again as we couldn't place ourselves in the maze
+        								sendSpawn();
+        								System.out.println("Could not respawn GUIClient so sending another spawn message");
+        							}
+        						}
+        						else
+        						{
+        							//TODO: Update RemoteClient with new spawn position
+        							System.out.println("Respawned remote player="+maze.respawnClient(clients.get(packet.getPlayerID()), 
+        									new Point(packet.getXpos(), packet.getYpos()),
+        									new Direction(packet.getDir())));
+        						}
+        					}
     					}
-    					else if(packet.getAction()==MazewarPacket.ACTION_MOVE && 
-    							packet.getType()==MazewarPacket.TYPE_SPAWN)
+    					else if(packet.getAction()==MazewarPacket.ACTION_LEAVE)
     					{
-    						//System.out.println("Received spawn for client "+packet.getPlayerID());
-    						if(clientID==packet.getPlayerID())
+    						if(packet.getPlayerID()==clientID)
     						{
-    							//TODO: Update GUIClient with new spawn position
-    							if(maze.respawnClient(clients.get(clientID), 
-    									new Point(packet.getXpos(), packet.getYpos()),
-    									new Direction(packet.getDir()))==false)
-    							{
-    								//Try to respawn again as we couldn't place ourselves in the maze
-    								sendSpawn();
-    							}
+    							Mazewar.quit();
     						}
     						else
     						{
-    							//TODO: Update RemoteClient with new spawn position
-    							maze.respawnClient(clients.get(packet.getPlayerID()), 
-    									new Point(packet.getXpos(), packet.getYpos()),
-    									new Direction(packet.getDir()));
+    							maze.removeClient(clients.get(packet.getPlayerID()));
     						}
     					}
     				}
@@ -543,7 +568,7 @@ public class Mazewar extends JFrame {
             
             pout.writeObject(pts);
         }
-        
+
         public static void sendSpawn() throws IOException
         {
             MazewarPacket pts=new MazewarPacket();
@@ -556,6 +581,17 @@ public class Mazewar extends JFrame {
             pts.setYpos(dpt.getY());
             pts.setPlayerID(clientID);
             pts.setPlayerName(name);
+            
+            pout.writeObject(pts);
+            System.out.println("Sent respawn message for ("+dpt.getX()+","+dpt.getY()+") facing "+dpt.getDirection().toString());
+        }
+        
+        public static void sendLeave() throws IOException
+        {
+            MazewarPacket pts=new MazewarPacket();
+            pts.setAction(MazewarPacket.ACTION_LEAVE);
+            
+            pts.setPlayerID(clientID);
             
             pout.writeObject(pts);
         }
