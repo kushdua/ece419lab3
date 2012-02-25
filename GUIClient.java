@@ -44,7 +44,8 @@ public class GUIClient extends LocalClient implements KeyListener {
                 // If the user pressed Q, invoke the cleanup code and quit. 
                 if((e.getKeyChar() == 'q') || (e.getKeyChar() == 'Q')) {
                 		//TODO: Assume clients cannot quit.. as answered on discussion board
-                        //Mazewar.quit();
+                		// but leave it in for now, as dynamic leave should work in our game
+                    	Mazewar.quit();
                 // Up-arrow moves forward.
                 } else if(e.getKeyCode() == KeyEvent.VK_UP) {
                         forward();

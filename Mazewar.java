@@ -168,6 +168,8 @@ public class Mazewar extends JFrame {
                 if((name == null) || (name.length() == 0)) {
                   Mazewar.quit();
                 }
+                
+                ScoreTableModel scoreModel = null;
 
                 // You may want to put your network initialization code somewhere in
                 // here.
@@ -192,7 +194,6 @@ public class Mazewar extends JFrame {
     				
     				while((packet=(MazewarPacket)(in.readObject()))!=null)
     				{
-    					System.out.println("Got packet with type="+packet.getAction());
     					if(packet.getAction()==MazewarPacket.ACTION_JOIN)
     					{
     						mazeSeed=packet.getSeed();
@@ -206,22 +207,28 @@ public class Mazewar extends JFrame {
     						System.out.println("Received start.. now ackJoined="+ackJoined+" and clientID="+clientID);
     						if(ackJoined==true && clientID!=-1)
     						{
-    							System.out.println("Trying to init maze");
+    							//System.out.println("Trying to init maze");
     							//Init maze
     							consolePrintLn("ECE419 Mazewar started!");
-    							System.out.println("Printed to console");
+    							//System.out.println("Printed to console");
     							
 				                // Create the maze
 				                maze = new MazeImpl(new Point(mazeWidth, mazeHeight), mazeSeed);
-    							System.out.println("Created maze");
+    							//System.out.println("Created maze");
 				                assert(maze != null);
+				                
+				                // Have the ScoreTableModel listen to the maze to find
+				                // out how to adjust scores.
+				                scoreModel = new ScoreTableModel();
+				                assert(scoreModel != null);
+				                maze.addMazeListener(scoreModel);
 				                
     							//Send spawn message
 				                pts=new MazewarPacket();
 				                pts.setAction(MazewarPacket.ACTION_MOVE);
 				                pts.setType(MazewarPacket.TYPE_SPAWN);
 
-    							System.out.println("Before getting spawn point and direction");
+    							//System.out.println("Before getting spawn point and direction");
 				                DirectedPoint dpt = maze.getNextSpawn();
 				                pts.setDir(dpt.getDirection());
 				                pts.setXpos(dpt.getX());
@@ -229,10 +236,10 @@ public class Mazewar extends JFrame {
 				                pts.setPlayerID(clientID);
 				                pts.setPlayerName(name);
 
-    							System.out.println("Before sending spawn packet");
+    							//System.out.println("Before sending spawn packet");
 				                out.writeObject(pts);
 				                
-				                System.out.println("Created maze and sent spawn message");
+				                //System.out.println("Created maze and sent spawn message");
     						}
     						else
     						{
@@ -243,7 +250,7 @@ public class Mazewar extends JFrame {
     					else if(packet.getAction()==MazewarPacket.ACTION_MOVE && 
     							packet.getType()==MazewarPacket.TYPE_SPAWN)
     					{
-    						System.out.println("Received spawn for client "+packet.getPlayerID());
+    						//System.out.println("Received spawn for client "+packet.getPlayerID());
     						if(clientID==packet.getPlayerID())
     						{
     			                // Create the GUIClient and connect it to the KeyListener queue
@@ -251,13 +258,17 @@ public class Mazewar extends JFrame {
     			                if(maze.addClient(guiClient, 
     			                			new Point(packet.getXpos(), packet.getYpos()), packet.getDir())==false)
     			                {
-    			                	System.out.println("Trying to respawn client "+clientID);
+    			                	//System.out.println("Trying to respawn client "+clientID);
     			                	//Respawn because we couldn't add ourselves at this point... someone else is here now
     				                pts=new MazewarPacket();
     				                pts.setAction(MazewarPacket.ACTION_MOVE);
     				                pts.setType(MazewarPacket.TYPE_SPAWN);
     				                
-    				                DirectedPoint dpt = maze.getNextSpawn();
+    				                DirectedPoint dpt = null;
+    				                for(int i=0; i<clientID; i++)
+    				                {
+    				                	dpt = maze.getNextSpawn();
+    				                }
     				                pts.setDir(dpt.getDirection());
     				                pts.setXpos(dpt.getX());
     				                pts.setYpos(dpt.getY());
@@ -273,9 +284,11 @@ public class Mazewar extends JFrame {
     						else
     						{
     							//TODO: Store RemoteClients in a list somewhere?
-    							maze.addClient(new RemoteClient(packet.getPlayerName()),
-    										new Point(packet.getXpos(), packet.getYpos()), packet.getDir());
-    							playersJoined++;
+    							if(maze.addClient(new RemoteClient(packet.getPlayerName()),
+    										new Point(packet.getXpos(), packet.getYpos()), packet.getDir())==true)
+    							{
+    								playersJoined++;
+    							}
     						}
     						
     						if(playersJoined==numplayers)
@@ -292,12 +305,6 @@ public class Mazewar extends JFrame {
 				} catch (ClassNotFoundException e) {
 					e.printStackTrace();
 				}
-                
-                // Have the ScoreTableModel listen to the maze to find
-                // out how to adjust scores.
-                ScoreTableModel scoreModel = new ScoreTableModel();
-                assert(scoreModel != null);
-                maze.addMazeListener(scoreModel);
                 
                 // Create the panel that will display the maze.
                 overheadPanel = new OverheadMazePanel(maze, guiClient);
