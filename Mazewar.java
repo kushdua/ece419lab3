@@ -204,7 +204,6 @@ public class Mazewar extends JFrame {
     					}
     					else if(packet.getAction()==MazewarPacket.ACTION_START)
     					{
-    						System.out.println("Received start.. now ackJoined="+ackJoined+" and clientID="+clientID);
     						if(ackJoined==true && clientID!=-1)
     						{
     							//System.out.println("Trying to init maze");
@@ -264,11 +263,7 @@ public class Mazewar extends JFrame {
     				                pts.setAction(MazewarPacket.ACTION_MOVE);
     				                pts.setType(MazewarPacket.TYPE_SPAWN);
     				                
-    				                DirectedPoint dpt = null;
-    				                for(int i=0; i<clientID; i++)
-    				                {
-    				                	dpt = maze.getNextSpawn();
-    				                }
+    				                DirectedPoint dpt = maze.getNextSpawn();
     				                pts.setDir(dpt.getDirection());
     				                pts.setXpos(dpt.getX());
     				                pts.setYpos(dpt.getY());
@@ -278,6 +273,7 @@ public class Mazewar extends JFrame {
     				                out.writeObject(pts);
     				                continue;
     			                }
+    			                System.out.println("Local Player "+packet.getPlayerID()+" added at ("+packet.getXpos()+","+packet.getYpos()+") facing "+packet.getDir().toString());
     			                this.addKeyListener(guiClient);
     			                playersJoined++;
     						}
@@ -287,6 +283,7 @@ public class Mazewar extends JFrame {
     							if(maze.addClient(new RemoteClient(packet.getPlayerName()),
     										new Point(packet.getXpos(), packet.getYpos()), packet.getDir())==true)
     							{
+    								System.out.println("Remote Player "+packet.getPlayerID()+" added at ("+packet.getXpos()+","+packet.getYpos()+") facing "+packet.getDir().toString());
     								playersJoined++;
     							}
     						}

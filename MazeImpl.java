@@ -415,6 +415,7 @@ public class MazeImpl extends Maze implements Serializable, ClientListener, Runn
                 update();
                 return deadPrj;
         }
+        
         /**
          * Internal helper for adding a {@link Client} to the {@link Maze}.
          * @param client The {@link Client} to be added.
@@ -452,17 +453,17 @@ public class MazeImpl extends Maze implements Serializable, ClientListener, Runn
             	return false;
             }
             
-            while(cell.isWall(d)) {
+           if(cell.isWall(d)) {
               return false;
             }
             
             cell.setContents(client);
-            clientMap.put(client, new DirectedPoint(point, d));
+            clientMap.put(client, new DirectedPoint(point,d));
             client.registerMaze(this);
             client.addClientListener(this);
             update();
             notifyClientAdd(client);
-            
+
             return true;
         }
         
@@ -475,7 +476,8 @@ public class MazeImpl extends Maze implements Serializable, ClientListener, Runn
         	DirectedPoint dp = new DirectedPoint(randomGen.nextInt(maxX),randomGen.nextInt(maxY),Direction.random());
         	Point pt = new Point(dp.getX(), dp.getY());
         	CellImpl cell = getCellImpl(pt);
-        	while(dp==null || cell.isWall(dp.getDirection()) || checkBounds(pt)==false)
+        	while(	dp==null || cell.isWall(dp.getDirection()) || cell.getContents()!=null || 
+        			checkBounds(pt)==false)
         	{
             	dp = new DirectedPoint(randomGen.nextInt(maxX),randomGen.nextInt(maxY),Direction.random());
             	pt = new Point(dp.getX(), dp.getY());
@@ -500,7 +502,7 @@ public class MazeImpl extends Maze implements Serializable, ClientListener, Runn
                 CellImpl cell = getCellImpl(point);
                 cell.setContents(null);
                 // Pick a random starting point, and check to see if it is already occupied
-                point = new Point(randomGen.nextInt(maxX),randomGen.nextInt(maxY));
+                /*point = new Point(randomGen.nextInt(maxX),randomGen.nextInt(maxY));
                 cell = getCellImpl(point);
                 // Repeat until we find an empty cell
                 while(cell.getContents() != null) {
@@ -513,7 +515,7 @@ public class MazeImpl extends Maze implements Serializable, ClientListener, Runn
                 }
                 cell.setContents(target);
                 clientMap.put(target, new DirectedPoint(point, d));
-                update();
+                */update();
                 notifyClientKilled(source, target);
         }
         

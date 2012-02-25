@@ -57,7 +57,6 @@ public abstract class Maze {
      * @param client {@link Client} to be added to the {@link Maze}.
      */
     public abstract void addClient(Client client);
-    
     /**
      * Try to add a client at specified position in maze. Return true if successful, false if not.
      * @param client	Client to add in maze
