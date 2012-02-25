@@ -63,7 +63,16 @@ public abstract class Maze {
      * @param point		Point in maze to add new client in the maze
      * @return			True if successful, false if not
      */
-    public abstract boolean addClient(Client client, Point point, Direction d);
+    public abstract boolean addClient(Client client, Point point, int d);
+    
+    /**
+     * Respawn client at specified point with given orientation direction.
+     * @param source	Client to respawn
+     * @param point		Point of respawn
+     * @param d			Orientation direction for respawn
+     * @return			True on success; false on failure
+     */
+    public abstract boolean respawnClient(Client source, Point point, Direction d);
     
     /**
      * Return new spawn point calculated from random variable.

@@ -26,10 +26,13 @@ import javax.swing.JOptionPane;
 import java.awt.GridBagLayout;
 import java.awt.GridBagConstraints;
 import javax.swing.BorderFactory;
+
+import java.io.IOException;
 import java.io.Serializable;
 
 import java.io.*;
 import java.net.*;
+import java.util.HashMap;
 
 /**
  * The entry point and glue code for the game.  It also contains some helpful
@@ -60,7 +63,7 @@ public class Mazewar extends JFrame {
         /**
          * The {@link Maze} that the game uses.
          */
-        private Maze maze = null;
+        private static Maze maze = null;
 
         /**
          * The {@link GUIClient} for the game.
@@ -70,7 +73,7 @@ public class Mazewar extends JFrame {
         /**
          * ID for this client (as returned from server)
          */
-        private int clientID = -1;
+        private static int clientID = -1;
 
         /**
          * Number of players to wait for (to display) before starting the game (as passed in from server).
@@ -108,6 +111,26 @@ public class Mazewar extends JFrame {
          * Client socket for communication with server
          */
         private Socket clientSocket=null;
+        
+        /**
+         * Output stream for sending to server
+         */
+        public static ObjectOutputStream pout = null;
+        
+        /**
+         * Input stream for receiving from server
+         */
+        public static ObjectInputStream pin = null;
+        
+        /**
+         * HashMap storing client objects instantiated locally (key = player ID)
+         */
+        private static HashMap<Integer, Client> clients = new HashMap<Integer, Client>();
+        
+        /**
+         * GUI (local) client name sa input by user
+         */
+        private static String name = "";
       
         /** 
          * Write a message to the console followed by a newline.
@@ -164,7 +187,7 @@ public class Mazewar extends JFrame {
 	    		
                 
                 // Throw up a dialog to get the GUIClient name.
-                String name = JOptionPane.showInputDialog("Enter your name");
+                name = JOptionPane.showInputDialog("Enter your name");
                 if((name == null) || (name.length() == 0)) {
                   Mazewar.quit();
                 }
@@ -186,6 +209,9 @@ public class Mazewar extends JFrame {
     	
     				out = new ObjectOutputStream(clientSocket.getOutputStream());
     				in = new ObjectInputStream(clientSocket.getInputStream());
+    				
+    				pout=out;
+    				pin=in;
     				
     				MazewarPacket packet=null;
     				MazewarPacket pts=null;
@@ -229,7 +255,7 @@ public class Mazewar extends JFrame {
 
     							//System.out.println("Before getting spawn point and direction");
 				                DirectedPoint dpt = maze.getNextSpawn();
-				                pts.setDir(dpt.getDirection());
+				                pts.setDir(dpt.getDirection().getDirection());
 				                pts.setXpos(dpt.getX());
 				                pts.setYpos(dpt.getY());
 				                pts.setPlayerID(clientID);
@@ -254,36 +280,43 @@ public class Mazewar extends JFrame {
     						{
     			                // Create the GUIClient and connect it to the KeyListener queue
     			                guiClient = new GUIClient(packet.getPlayerName());
+    			                clients.put(clientID, guiClient);
+    			                
+    			                //maze.addClient(guiClient);
     			                if(maze.addClient(guiClient, 
     			                			new Point(packet.getXpos(), packet.getYpos()), packet.getDir())==false)
     			                {
     			                	//System.out.println("Trying to respawn client "+clientID);
     			                	//Respawn because we couldn't add ourselves at this point... someone else is here now
-    				                pts=new MazewarPacket();
+    				                /*pts=new MazewarPacket();
     				                pts.setAction(MazewarPacket.ACTION_MOVE);
     				                pts.setType(MazewarPacket.TYPE_SPAWN);
     				                
     				                DirectedPoint dpt = maze.getNextSpawn();
-    				                pts.setDir(dpt.getDirection());
+    				                pts.setDir(dpt.getDirection().getDirection());
     				                pts.setXpos(dpt.getX());
     				                pts.setYpos(dpt.getY());
     				                pts.setPlayerID(clientID);
     				                pts.setPlayerName(name);
     				                
-    				                out.writeObject(pts);
+    				                out.writeObject(pts);*/
+    			                	
     				                continue;
     			                }
-    			                System.out.println("Local Player "+packet.getPlayerID()+" added at ("+packet.getXpos()+","+packet.getYpos()+") facing "+packet.getDir().toString());
+    			                //System.out.println("Player "+packet.getPlayerID()+" added at ("+packet.getXpos()+","+packet.getYpos()+") facing "+packet.getDir());
     			                this.addKeyListener(guiClient);
     			                playersJoined++;
     						}
     						else
     						{
-    							//TODO: Store RemoteClients in a list somewhere?
-    							if(maze.addClient(new RemoteClient(packet.getPlayerName()),
+    							//maze.addClient(new RemoteClient(packet.getPlayerName()));
+    							//{
+    							RemoteClient rc = new RemoteClient(packet.getPlayerName());
+    							if(maze.addClient(rc,
     										new Point(packet.getXpos(), packet.getYpos()), packet.getDir())==true)
     							{
-    								System.out.println("Remote Player "+packet.getPlayerID()+" added at ("+packet.getXpos()+","+packet.getYpos()+") facing "+packet.getDir().toString());
+    								clients.put(packet.getPlayerID(), rc);
+    								//System.out.println("Player "+packet.getPlayerID()+" added at ("+packet.getXpos()+","+packet.getYpos()+") facing "+packet.getDir());
     								playersJoined++;
     							}
     						}
@@ -295,6 +328,143 @@ public class Mazewar extends JFrame {
     						}
     					}
     				}
+    				
+                    // Create the panel that will display the maze.
+                    overheadPanel = new OverheadMazePanel(maze, guiClient);
+                    assert(overheadPanel != null);
+                    maze.addMazeListener(overheadPanel);
+                    
+                    // Don't allow editing the console from the GUI
+                    console.setEditable(false);
+                    console.setFocusable(false);
+                    console.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder()));
+                   
+                    // Allow the console to scroll by putting it in a scrollpane
+                    JScrollPane consoleScrollPane = new JScrollPane(console);
+                    assert(consoleScrollPane != null);
+                    consoleScrollPane.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(), "Console"));
+                    
+                    // Create the score table
+                    scoreTable = new JTable(scoreModel);
+                    assert(scoreTable != null);
+                    scoreTable.setFocusable(false);
+                    scoreTable.setRowSelectionAllowed(false);
+
+                    // Allow the score table to scroll too.
+                    JScrollPane scoreScrollPane = new JScrollPane(scoreTable);
+                    assert(scoreScrollPane != null);
+                    scoreScrollPane.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(), "Scores"));
+                    
+                    // Create the layout manager
+                    GridBagLayout layout = new GridBagLayout();
+                    GridBagConstraints c = new GridBagConstraints();
+                    getContentPane().setLayout(layout);
+                    
+                    // Define the constraints on the components.
+                    c.fill = GridBagConstraints.BOTH;
+                    c.weightx = 1.0;
+                    c.weighty = 3.0;
+                    c.gridwidth = GridBagConstraints.REMAINDER;
+                    layout.setConstraints(overheadPanel, c);
+                    c.gridwidth = GridBagConstraints.RELATIVE;
+                    c.weightx = 2.0;
+                    c.weighty = 1.0;
+                    layout.setConstraints(consoleScrollPane, c);
+                    c.gridwidth = GridBagConstraints.REMAINDER;
+                    c.weightx = 1.0;
+                    layout.setConstraints(scoreScrollPane, c);
+                                    
+                    // Add the components
+                    getContentPane().add(overheadPanel);
+                    getContentPane().add(consoleScrollPane);
+                    getContentPane().add(scoreScrollPane);
+                    
+                    // Pack everything neatly.
+                    pack();
+
+                    // Let the magic begin.
+                    setVisible(true);
+                    overheadPanel.repaint();
+                    this.requestFocusInWindow();
+
+					//Listen for events and perform appropriate GUI update action
+    				while((packet=(MazewarPacket)(in.readObject()))!=null)
+    				{
+    					if(packet.getAction()==MazewarPacket.ACTION_MOVE)
+    					{
+    						if(packet.getType()==MazewarPacket.TYPE_MOVE_DOWN_BACKWARD)
+    						{
+    							if(clients.containsKey(packet.getPlayerID()))
+    							{
+    								clients.get(packet.getPlayerID()).backup();
+    							}
+    						}
+    						else if(packet.getType()==MazewarPacket.TYPE_MOVE_UP_FORWARD)
+    						{
+    							if(clients.containsKey(packet.getPlayerID()))
+    							{
+    								clients.get(packet.getPlayerID()).forward();
+    							}
+    						}
+    						else if(packet.getType()==MazewarPacket.TYPE_MOVE_LEFT)
+    						{
+    							if(clients.containsKey(packet.getPlayerID()))
+    							{
+    								clients.get(packet.getPlayerID()).turnLeft();
+    							}
+    						}
+    						else if(packet.getType()==MazewarPacket.TYPE_MOVE_RIGHT)
+    						{
+    							if(clients.containsKey(packet.getPlayerID()))
+    							{
+    								clients.get(packet.getPlayerID()).turnRight();
+    							}
+    						}
+    						else if(packet.getType()==MazewarPacket.TYPE_FIRE)
+    						{
+    							//Try without passing projectile movement, just init
+    							if(clients.containsKey(packet.getPlayerID()))
+    							{
+    								clients.get(packet.getPlayerID()).fire();
+    							}
+    							/*if(packet.getPlayerID()==clientID)
+    							{
+	    							//Fire projectile as it's mine -> I track and transmit messages for it
+	    							if(clients.containsKey(packet.getPlayerID()))
+	    							{
+	    								clients.get(packet.getPlayerID()).fire();
+	    							}
+    							}
+    							else
+    							{
+    								//Create or move projectile
+    							}*/
+    						}
+    					}
+    					else if(packet.getAction()==MazewarPacket.ACTION_MOVE && 
+    							packet.getType()==MazewarPacket.TYPE_SPAWN)
+    					{
+    						//System.out.println("Received spawn for client "+packet.getPlayerID());
+    						if(clientID==packet.getPlayerID())
+    						{
+    							//TODO: Update GUIClient with new spawn position
+    							if(maze.respawnClient(clients.get(clientID), 
+    									new Point(packet.getXpos(), packet.getYpos()),
+    									new Direction(packet.getDir()))==false)
+    							{
+    								//Try to respawn again as we couldn't place ourselves in the maze
+    								sendSpawn();
+    							}
+    						}
+    						else
+    						{
+    							//TODO: Update RemoteClient with new spawn position
+    							maze.respawnClient(clients.get(packet.getPlayerID()), 
+    									new Point(packet.getXpos(), packet.getYpos()),
+    									new Direction(packet.getDir()));
+    						}
+    					}
+    				}
     			} catch (IOException e) {
     				e.printStackTrace();
                 	System.err.println("Error in joining and starting the game. Exiting...");
@@ -303,63 +473,7 @@ public class Mazewar extends JFrame {
 					e.printStackTrace();
 				}
                 
-                // Create the panel that will display the maze.
-                overheadPanel = new OverheadMazePanel(maze, guiClient);
-                assert(overheadPanel != null);
-                maze.addMazeListener(overheadPanel);
-                
-                // Don't allow editing the console from the GUI
-                console.setEditable(false);
-                console.setFocusable(false);
-                console.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder()));
-               
-                // Allow the console to scroll by putting it in a scrollpane
-                JScrollPane consoleScrollPane = new JScrollPane(console);
-                assert(consoleScrollPane != null);
-                consoleScrollPane.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(), "Console"));
-                
-                // Create the score table
-                scoreTable = new JTable(scoreModel);
-                assert(scoreTable != null);
-                scoreTable.setFocusable(false);
-                scoreTable.setRowSelectionAllowed(false);
 
-                // Allow the score table to scroll too.
-                JScrollPane scoreScrollPane = new JScrollPane(scoreTable);
-                assert(scoreScrollPane != null);
-                scoreScrollPane.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(), "Scores"));
-                
-                // Create the layout manager
-                GridBagLayout layout = new GridBagLayout();
-                GridBagConstraints c = new GridBagConstraints();
-                getContentPane().setLayout(layout);
-                
-                // Define the constraints on the components.
-                c.fill = GridBagConstraints.BOTH;
-                c.weightx = 1.0;
-                c.weighty = 3.0;
-                c.gridwidth = GridBagConstraints.REMAINDER;
-                layout.setConstraints(overheadPanel, c);
-                c.gridwidth = GridBagConstraints.RELATIVE;
-                c.weightx = 2.0;
-                c.weighty = 1.0;
-                layout.setConstraints(consoleScrollPane, c);
-                c.gridwidth = GridBagConstraints.REMAINDER;
-                c.weightx = 1.0;
-                layout.setConstraints(scoreScrollPane, c);
-                                
-                // Add the components
-                getContentPane().add(overheadPanel);
-                getContentPane().add(consoleScrollPane);
-                getContentPane().add(scoreScrollPane);
-                
-                // Pack everything neatly.
-                pack();
-
-                // Let the magic begin.
-                setVisible(true);
-                overheadPanel.repaint();
-                this.requestFocusInWindow();
         }
 
         
@@ -371,5 +485,78 @@ public class Mazewar extends JFrame {
         	
                 /* Create the GUI */
                 new Mazewar(args);
+        }
+        
+        public static void sendMoveBack() throws IOException
+        {
+            MazewarPacket pts=new MazewarPacket();
+            pts.setAction(MazewarPacket.ACTION_MOVE);
+            pts.setType(MazewarPacket.TYPE_MOVE_DOWN_BACKWARD);
+            
+            pts.setPlayerID(clientID);
+            
+            pout.writeObject(pts);
+        }
+        
+        public static void sendMoveForward() throws IOException
+        {
+            MazewarPacket pts=new MazewarPacket();
+            pts.setAction(MazewarPacket.ACTION_MOVE);
+            pts.setType(MazewarPacket.TYPE_MOVE_UP_FORWARD);
+            
+            pts.setPlayerID(clientID);
+            
+            pout.writeObject(pts);
+        }
+        
+        public static void sendMoveLeft() throws IOException
+        {
+            MazewarPacket pts=new MazewarPacket();
+            pts.setAction(MazewarPacket.ACTION_MOVE);
+            pts.setType(MazewarPacket.TYPE_MOVE_LEFT);
+            
+            pts.setPlayerID(clientID);
+            
+            pout.writeObject(pts);
+        }
+        
+        public static void sendMoveRight() throws IOException
+        {
+            MazewarPacket pts=new MazewarPacket();
+            pts.setAction(MazewarPacket.ACTION_MOVE);
+            pts.setType(MazewarPacket.TYPE_MOVE_RIGHT);
+            
+            pts.setPlayerID(clientID);
+            
+            pout.writeObject(pts);
+        }
+        
+        public static void sendFire() throws IOException
+        {
+            MazewarPacket pts=new MazewarPacket();
+            pts.setAction(MazewarPacket.ACTION_MOVE);
+            pts.setType(MazewarPacket.TYPE_FIRE);
+            
+            DirectedPoint dpt = maze.getNextSpawn();
+            //pts.setDir(clients.get(clientID).getOrientation().getDirection());
+            pts.setPlayerID(clientID);
+            
+            pout.writeObject(pts);
+        }
+        
+        public static void sendSpawn() throws IOException
+        {
+            MazewarPacket pts=new MazewarPacket();
+            pts.setAction(MazewarPacket.ACTION_MOVE);
+            pts.setType(MazewarPacket.TYPE_SPAWN);
+            
+            DirectedPoint dpt = maze.getNextSpawn();
+            pts.setDir(dpt.getDirection().getDirection());
+            pts.setXpos(dpt.getX());
+            pts.setYpos(dpt.getY());
+            pts.setPlayerID(clientID);
+            pts.setPlayerName(name);
+            
+            pout.writeObject(pts);
         }
 }

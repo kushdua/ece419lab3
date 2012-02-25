@@ -28,7 +28,7 @@ public class MazewarPacket implements Serializable {
 
 	private int xpos;
 	private int ypos;
-	private Direction dir;
+	private int dir;
 
 	public void setAction(int action) {
 		this.action = action;
@@ -86,11 +86,11 @@ public class MazewarPacket implements Serializable {
 		return ypos;
 	}
 
-	public void setDir(Direction dir) {
+	public void setDir(int dir) {
 		this.dir = dir;
 	}
 
-	public Direction getDir() {
+	public int getDir() {
 		return dir;
 	}
 

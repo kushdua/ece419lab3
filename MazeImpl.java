@@ -353,7 +353,7 @@ public class MazeImpl extends Maze implements Serializable, ClientListener, Runn
                                 }
                         }
                         try {
-                                thread.sleep(200);
+                                Thread.sleep(200);
                         } catch(Exception e) {
                                 // shouldn't happen
                         }
@@ -444,11 +444,12 @@ public class MazeImpl extends Maze implements Serializable, ClientListener, Runn
          * @param point		Point in maze to add new client in the maze
          * @return			True if successful, false if not
          */
-        public synchronized boolean addClient(Client client, Point point, Direction d) {
+        public synchronized boolean addClient(Client client, Point point, int dir) {
             assert(client != null);
             assert(checkBounds(point));
             CellImpl cell = getCellImpl(point);
-            if(cell==null)
+            Direction d = new Direction(dir);
+            if(cell==null || cell.getContents()!=null)
             {
             	return false;
             }
@@ -456,9 +457,13 @@ public class MazeImpl extends Maze implements Serializable, ClientListener, Runn
            if(cell.isWall(d)) {
               return false;
             }
-            
+           
             cell.setContents(client);
-            clientMap.put(client, new DirectedPoint(point,d));
+            clientMap.put(client, new DirectedPoint(point, 
+            		(d.equals(Direction.North)?Direction.North:
+            			(d.equals(Direction.East)?Direction.East:
+            				(d.equals(Direction.South)?Direction.South:Direction.West)))
+            				));
             client.registerMaze(this);
             client.addClientListener(this);
             update();
@@ -517,6 +522,22 @@ public class MazeImpl extends Maze implements Serializable, ClientListener, Runn
                 clientMap.put(target, new DirectedPoint(point, d));
                 */update();
                 notifyClientKilled(source, target);
+        }
+        
+        public synchronized boolean respawnClient(Client source, Point point, Direction d)
+        {
+            CellImpl cell = getCellImpl(point);
+            // Repeat until we find an empty cell
+            if(cell.getContents() != null || cell.isWall(d)) {
+            	return false;
+            }
+            cell.setContents(source);
+            clientMap.put(source, new DirectedPoint(point, 
+            		(d.equals(Direction.North)?Direction.North:
+            			(d.equals(Direction.East)?Direction.East:
+            				(d.equals(Direction.South)?Direction.South:Direction.West)))
+            				));
+        	return true;
         }
         
         /**

@@ -26,7 +26,7 @@ import java.util.Random;
  * @version $Id: Direction.java 339 2004-01-23 20:06:22Z geoffw $
  */
 
-public class Direction implements Serializable {
+public class Direction  {
         
         /* Internals ******************************************************/
         
@@ -51,9 +51,18 @@ public class Direction implements Serializable {
         /** 
          * Create a new direction from an internal representation
          */
-        private Direction(int direction) {
+        public Direction(int direction) {
                 assert((direction >= 0) && (direction < 4));
                 this.direction = direction;
+        }
+        
+        /**
+         * Get direction for this object.
+         * @return	Direction constant as integer
+         */
+        public int getDirection()
+        {
+        	return direction;
         }
         
         /**

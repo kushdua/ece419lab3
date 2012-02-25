@@ -19,6 +19,7 @@ USA.
 
 import java.awt.event.KeyListener;
 import java.awt.event.KeyEvent;
+import java.io.IOException;
 
 /**
  * An implementation of {@link LocalClient} that is controlled by the keyboard
@@ -48,19 +49,50 @@ public class GUIClient extends LocalClient implements KeyListener {
                     	Mazewar.quit();
                 // Up-arrow moves forward.
                 } else if(e.getKeyCode() == KeyEvent.VK_UP) {
-                        forward();
+                		//Send packet with move forward maybe just put it here.. then call forward when you recv in MW
+                        //forward();
+                		try {
+							Mazewar.sendMoveForward();
+						} catch (IOException e1) {
+							// TODO Auto-generated catch block
+							e1.printStackTrace();
+						}
                 // Down-arrow moves backward.
                 } else if(e.getKeyCode() == KeyEvent.VK_DOWN) {
-                        backup();
+                        //backup();
+                		try {
+							Mazewar.sendMoveBack();
+						} catch (IOException e1) {
+							// TODO Auto-generated catch block
+							e1.printStackTrace();
+						}
                 // Left-arrow turns left.
                 } else if(e.getKeyCode() == KeyEvent.VK_LEFT) {
-                        turnLeft();
+                        //turnLeft();
+                		try {
+							Mazewar.sendMoveLeft();
+						} catch (IOException e1) {
+							// TODO Auto-generated catch block
+							e1.printStackTrace();
+						}
                 // Right-arrow turns right.
                 } else if(e.getKeyCode() == KeyEvent.VK_RIGHT) {
-                        turnRight();
+                        //turnRight();
+                		try {
+							Mazewar.sendMoveRight();
+						} catch (IOException e1) {
+							// TODO Auto-generated catch block
+							e1.printStackTrace();
+						}
                 // Spacebar fires.
                 } else if(e.getKeyCode() == KeyEvent.VK_SPACE) {
-                        fire();
+                        //fire();
+                		try {
+							Mazewar.sendFire();
+						} catch (IOException e1) {
+							// TODO Auto-generated catch block
+							e1.printStackTrace();
+						}
                 }
         }
         
