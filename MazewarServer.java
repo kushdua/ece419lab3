@@ -90,7 +90,14 @@ public class MazewarServer {
         			MazewarPacket toclientpacket =  (MazewarPacket) Queue.remove(topindex);
             		//need to broadcast this packet, so send it to all the clients
             		for(int i =0;i<waitForNumClients;i++) {
-                		toplayer[i].writeObject(toclientpacket);
+            			try
+            			{
+            				toplayer[i].writeObject(toclientpacket);
+            			}
+            			catch(IOException ioe)
+            			{
+            				//Client must have disconnected.. Hide the error though.
+            			}
             		}
         		}	
         	}

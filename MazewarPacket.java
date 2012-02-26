@@ -1,6 +1,7 @@
 import java.io.Serializable;
 
 public class MazewarPacket implements Serializable {
+	//Type of MOVE messages
 	public static final int TYPE_MOVE_LEFT=1;
 	public static final int TYPE_MOVE_RIGHT=2;
 	public static final int TYPE_MOVE_UP_FORWARD=3;
@@ -9,24 +10,39 @@ public class MazewarPacket implements Serializable {
 	public static final int TYPE_DEAD=6;
 	public static final int TYPE_SPAWN=7;
 	public static final int TYPE_QUIT=8;
+	public static final int TYPE_MOVE_PROJECTILE=9;
 	public static final int TYPE_INVALID=-1;
 	
+	//Type of action messages
 	public static final int ACTION_MOVE=1;
 	public static final int ACTION_JOIN=2;
 	public static final int ACTION_START=3;
 	public static final int ACTION_LEAVE=4;
 	public static final int ACTION_INVALID=-1;
 	
+	//Invalid constant for types
 	public static final int ID_INVALID=-1;
 	
 	private int action=ACTION_INVALID;
 	private int type=TYPE_INVALID;
 	private int playerID=ID_INVALID;
+	
+	/**
+	 * Max number of players in the game
+	 */
 	private int maxplayer = 0;
+	
+	/**
+	 * Name for player this message concerns
+	 */
 	private String playerName="";
 	
+	/**
+	 * Random seed provided by server initially
+	 */
 	private int seed;
 
+	//Position and direction variables for location synchronization when needed
 	private int xpos;
 	private int ypos;
 	private int dir;

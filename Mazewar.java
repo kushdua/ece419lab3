@@ -32,7 +32,11 @@ import java.io.Serializable;
 
 import java.io.*;
 import java.net.*;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map;
 
 /**
  * The entry point and glue code for the game.  It also contains some helpful
@@ -43,6 +47,11 @@ import java.util.HashMap;
 
 public class Mazewar extends JFrame {
 
+		/**
+		 * Boolean mode for whether or not to print debug messages through printLn function in Mazewar.
+		 */
+		private static boolean debugMode=true;
+	
         /**
          * The default width of the {@link Maze}.
          */
@@ -73,7 +82,7 @@ public class Mazewar extends JFrame {
         /**
          * ID for this client (as returned from server)
          */
-        private static int clientID = -1;
+        public static int clientID = -1;
 
         /**
          * Number of players to wait for (to display) before starting the game (as passed in from server).
@@ -125,7 +134,7 @@ public class Mazewar extends JFrame {
         /**
          * HashMap storing client objects instantiated locally (key = player ID)
          */
-        private static HashMap<Integer, Client> clients = new HashMap<Integer, Client>();
+        public static HashMap<Integer, Client> clients = new HashMap<Integer, Client>();
         
         /**
          * GUI (local) client name sa input by user
@@ -174,6 +183,7 @@ public class Mazewar extends JFrame {
 
         		super("ECE419 Mazewar");
 
+        		//Populate from CL args
 	    		if(args.length!=2)
 	    		{
 	    			System.out.println("Usage: java Mazewar <server address> <server port>");
@@ -194,8 +204,7 @@ public class Mazewar extends JFrame {
                 
                 ScoreTableModel scoreModel = null;
 
-                // You may want to put your network initialization code somewhere in
-                // here.
+                // You may want to put your network initialization code somewhere in here.
     			try
     			{
     				ObjectOutputStream out = null;
@@ -205,6 +214,7 @@ public class Mazewar extends JFrame {
     					clientSocket.close();
     				}
     	
+    				//Open connection and save In/Out stream objects for future communication
     				clientSocket = new Socket(serverAddress, serverPort);
     	
     				out = new ObjectOutputStream(clientSocket.getOutputStream());
@@ -218,12 +228,14 @@ public class Mazewar extends JFrame {
     				boolean ackJoined=false;
     				int playersJoined=0;
     				
+    				//Listen for game JOIN, START and SPAWN messages so we can start the gameplay
     				while((packet=(MazewarPacket)(in.readObject()))!=null)
     				{
-    					System.out.println("Received packet of action="+packet.getAction()+" and type="+packet.getType()+
+    					Mazewar.printLn("Received packet of action="+packet.getAction()+" and type="+packet.getType()+
     							" and I have spawned only "+(playersJoined+1)+" out of "+numplayers+" players.");
     					if(packet.getAction()==MazewarPacket.ACTION_JOIN)
     					{
+    						//Save seed, client ID assigned to local player and total number of players in game
     						mazeSeed=packet.getSeed();
     						clientID=packet.getPlayerID();
     						numplayers=packet.getMaxplayer();
@@ -232,16 +244,18 @@ public class Mazewar extends JFrame {
     					}
     					else if(packet.getAction()==MazewarPacket.ACTION_START)
     					{
+    						//Set up maze structures on START message, but wait for SPAWN
+    						//of other players before starting gameplay
     						if(ackJoined==true && clientID!=-1)
     						{
-    							//System.out.println("Trying to init maze");
+    							//Mazewar.printLn("Trying to init maze");
     							//Init maze
     							consolePrintLn("ECE419 Mazewar started!");
-    							//System.out.println("Printed to console");
+    							//Mazewar.printLn("Printed to console");
     							
 				                // Create the maze
 				                maze = new MazeImpl(new Point(mazeWidth, mazeHeight), mazeSeed);
-    							//System.out.println("Created maze");
+    							//Mazewar.printLn("Created maze");
 				                assert(maze != null);
 				                
 				                // Have the ScoreTableModel listen to the maze to find
@@ -255,7 +269,7 @@ public class Mazewar extends JFrame {
 				                pts.setAction(MazewarPacket.ACTION_MOVE);
 				                pts.setType(MazewarPacket.TYPE_SPAWN);
 
-    							//System.out.println("Before getting spawn point and direction");
+    							//Mazewar.printLn("Before getting spawn point and direction");
 				                DirectedPoint dpt = maze.getNextSpawn();
 				                pts.setDir(dpt.getDirection().getDirection());
 				                pts.setXpos(dpt.getX());
@@ -263,13 +277,14 @@ public class Mazewar extends JFrame {
 				                pts.setPlayerID(clientID);
 				                pts.setPlayerName(name);
 
-    							//System.out.println("Before sending spawn packet");
+    							//Mazewar.printLn("Before sending spawn packet");
 				                out.writeObject(pts);
 				                
-				                //System.out.println("Created maze and sent spawn message");
+				                //Mazewar.printLn("Created maze and sent spawn message");
     						}
     						else
     						{
+    							//For some unknown reason START sent before JOIN.. error in comm or corruption => exit
     							System.err.println("Unknown error in starting the game. Join message not received most probably.");
     							System.exit(-1);
     						}
@@ -277,48 +292,34 @@ public class Mazewar extends JFrame {
     					else if(packet.getAction()==MazewarPacket.ACTION_MOVE && 
     							packet.getType()==MazewarPacket.TYPE_SPAWN)
     					{
-    						//System.out.println("Received spawn for client "+packet.getPlayerID());
+    						//Mazewar.printLn("Received spawn for client "+packet.getPlayerID());
     						if(clientID==packet.getPlayerID())
     						{
-    			                // Create the GUIClient and connect it to the KeyListener queue
+    			                //Create the GUIClient and save it in our local clients list
     			                guiClient = new GUIClient(packet.getPlayerName());
     			                clients.put(clientID, guiClient);
     			                
-    			                //maze.addClient(guiClient);
     			                if(maze.addClient(guiClient, 
     			                			new Point(packet.getXpos(), packet.getYpos()), packet.getDir())==false)
     			                {
-    			                	//System.out.println("Trying to respawn client "+clientID);
-    			                	//Respawn because we couldn't add ourselves at this point... someone else is here now
-    				                /*pts=new MazewarPacket();
-    				                pts.setAction(MazewarPacket.ACTION_MOVE);
-    				                pts.setType(MazewarPacket.TYPE_SPAWN);
-    				                
-    				                DirectedPoint dpt = maze.getNextSpawn();
-    				                pts.setDir(dpt.getDirection().getDirection());
-    				                pts.setXpos(dpt.getX());
-    				                pts.setYpos(dpt.getY());
-    				                pts.setPlayerID(clientID);
-    				                pts.setPlayerName(name);
-    				                
-    				                out.writeObject(pts);*/
-    			                	
+    			                	//Respawn because we couldn't add ourselves at this point...
+    			                	//someone/something else is here now
+    			                	sendSpawn();
     				                continue;
     			                }
-    			                //System.out.println("Player "+packet.getPlayerID()+" added at ("+packet.getXpos()+","+packet.getYpos()+") facing "+packet.getDir());
+    			                //Mazewar.printLn("Player "+packet.getPlayerID()+" added at ("+packet.getXpos()+","+packet.getYpos()+") facing "+packet.getDir());
     			                this.addKeyListener(guiClient);
     			                playersJoined++;
     						}
     						else
     						{
-    							//maze.addClient(new RemoteClient(packet.getPlayerName()));
-    							//{
+    							//Create the RemoteClient and save it in our local clients list
     							RemoteClient rc = new RemoteClient(packet.getPlayerName());
     							if(maze.addClient(rc,
     										new Point(packet.getXpos(), packet.getYpos()), packet.getDir())==true)
     							{
     								clients.put(packet.getPlayerID(), rc);
-    								//System.out.println("Player "+packet.getPlayerID()+" added at ("+packet.getXpos()+","+packet.getYpos()+") facing "+packet.getDir());
+    								//Mazewar.printLn("Player "+packet.getPlayerID()+" added at ("+packet.getXpos()+","+packet.getYpos()+") facing "+packet.getDir());
     								playersJoined++;
     							}
     						}
@@ -330,44 +331,45 @@ public class Mazewar extends JFrame {
     						}
     					}
     				}
-System.out.println("1");    				
+//Debug messages for weird, randomly occurring bug (which might have been fixed) where visual maze doesn't appear
+Mazewar.printLn("1");
                     // Create the panel that will display the maze.
                     overheadPanel = new OverheadMazePanel(maze, guiClient);
                     assert(overheadPanel != null);
                     maze.addMazeListener(overheadPanel);
 
-System.out.println("2");                      
+Mazewar.printLn("2");
                     // Don't allow editing the console from the GUI
                     console.setEditable(false);
                     console.setFocusable(false);
                     console.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder()));
 
-System.out.println("3");                      
+Mazewar.printLn("3");
                     // Allow the console to scroll by putting it in a scrollpane
                     JScrollPane consoleScrollPane = new JScrollPane(console);
                     assert(consoleScrollPane != null);
                     consoleScrollPane.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(), "Console"));
 
-System.out.println("4");                       
+Mazewar.printLn("4");
                     // Create the score table
                     scoreTable = new JTable(scoreModel);
                     assert(scoreTable != null);
                     scoreTable.setFocusable(false);
                     scoreTable.setRowSelectionAllowed(false);
 
-System.out.println("5");   
+Mazewar.printLn("5");
                     // Allow the score table to scroll too.
                     JScrollPane scoreScrollPane = new JScrollPane(scoreTable);
                     assert(scoreScrollPane != null);
                     scoreScrollPane.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(), "Scores"));
 
-System.out.println("6");                       
+Mazewar.printLn("6");
                     // Create the layout manager
                     GridBagLayout layout = new GridBagLayout();
                     GridBagConstraints c = new GridBagConstraints();
                     getContentPane().setLayout(layout);
 
-System.out.println("7");   
+Mazewar.printLn("7");
                     // Define the constraints on the components.
                     c.fill = GridBagConstraints.BOTH;
                     c.weightx = 1.0;
@@ -382,25 +384,26 @@ System.out.println("7");
                     c.weightx = 1.0;
                     layout.setConstraints(scoreScrollPane, c);
 
-System.out.println("8");   
+Mazewar.printLn("8");
                     // Add the components
                     getContentPane().add(overheadPanel);
                     getContentPane().add(consoleScrollPane);
                     getContentPane().add(scoreScrollPane);
 
-System.out.println("9");   
+Mazewar.printLn("9");
                     // Pack everything neatly.
                     pack();
 
-System.out.println("10");   
+Mazewar.printLn("10");
                     // Let the magic begin.
                     setVisible(true);
                     overheadPanel.repaint();
-System.out.println("11");   
+Mazewar.printLn("11");
                     this.requestFocusInWindow();
-System.out.println("12");   
-System.out.println("Created and hopefully displayed maze");
-					//Listen for events and perform appropriate GUI update action
+Mazewar.printLn("12");
+Mazewar.printLn("Created and displayed maze");
+
+					//Listen for events and perform appropriate GUI update action... self-explanatory
     				while((packet=(MazewarPacket)(in.readObject()))!=null)
     				{
     					if(packet.getAction()==MazewarPacket.ACTION_MOVE)
@@ -435,51 +438,71 @@ System.out.println("Created and hopefully displayed maze");
     						}
     						else if(packet.getType()==MazewarPacket.TYPE_FIRE)
     						{
-    							//Try without passing projectile movement, just init
-    							if(clients.containsKey(packet.getPlayerID()))
-    							{
-    								clients.get(packet.getPlayerID()).fire();
-    							}
-    							/*if(packet.getPlayerID()==clientID)
-    							{
-	    							//Fire projectile as it's mine -> I track and transmit messages for it
-	    							if(clients.containsKey(packet.getPlayerID()))
-	    							{
-	    								clients.get(packet.getPlayerID()).fire();
-	    							}
-    							}
-    							else
-    							{
-    								//Create or move projectile
-    							}*/
+    							//Fire projectiles regardless of whether it is for GUI or Remote client
+    							//Thread which sends MOVE_PROJECTILE messages only does so for projectiles
+    							//fired by the local GUI client, and leaves the remote ones intact.
+    							//Only MOVE_PROJECTILE messages can move projectiles (whether local or remote).
+	    						clients.get(packet.getPlayerID()).fire();
+    						}
+    						else if(packet.getType()==MazewarPacket.TYPE_MOVE_PROJECTILE)
+    						{
+    							Mazewar.printLn("Receied MOVE_PROJECTILE for client "+packet.getPlayerID());
+    							//Run the timer loop code only once for the client's (from packet) projectile
+    							// => move/remove projectile + kill, w.e.
+    							Collection deadPrj = new HashSet();
+    							Map projectileMap =((MazeImpl)maze).getProjectileMap();
+    	                        if(!projectileMap.isEmpty()) {
+                                    Iterator it = projectileMap.keySet().iterator();
+                                    synchronized(projectileMap) {
+                                            while(it.hasNext()) {
+                                                    Object o = it.next();
+                                                    //Mazewar.printLn("Projectile owner = "+((Projectile)o).getOwner()+" and packet client = "+clients.get(packet.getPlayerID()));
+                                                    assert(o instanceof Projectile);
+                                                    if(	deadPrj.contains(o)==false &&
+                                                    	((Projectile)o).getOwner()==clients.get(packet.getPlayerID()))
+                                                    {
+                                                    	//Send MOVE_PROJECTILE message
+                                                    	deadPrj.addAll(((MazeImpl)maze).moveProjectile((Projectile)o));
+                                                    }
+                                            }
+                                            it = deadPrj.iterator();
+                                            while(it.hasNext()) {
+                                                    Object o = it.next();
+                                                    assert(o instanceof Projectile);
+                                                    Projectile prj = (Projectile)o;
+                                                    projectileMap.remove(prj);
+                                                    ((MazeImpl)maze).getClientFired().remove(prj.getOwner());
+                                            }
+                                            deadPrj.clear();
+                                    }
+    	                        }
     						}
         					else if(packet.getType()==MazewarPacket.TYPE_SPAWN)
         					{
-        						//System.out.println("Received spawn for client "+packet.getPlayerID());
+        						//Mazewar.printLn("Received spawn for client "+packet.getPlayerID());
         						if(clientID==packet.getPlayerID())
         						{
-        							System.out.println("Trying to respawn GUIClient");
-        							//TODO: Update GUIClient with new spawn position
+        							//Update GUIClient with new spawn position
         							if(maze.respawnClient(clients.get(clientID), 
         									new Point(packet.getXpos(), packet.getYpos()),
         									new Direction(packet.getDir()))==false)
         							{
         								//Try to respawn again as we couldn't place ourselves in the maze
         								sendSpawn();
-        								System.out.println("Could not respawn GUIClient so sending another spawn message");
         							}
         						}
         						else
         						{
-        							//TODO: Update RemoteClient with new spawn position
-        							System.out.println("Respawned remote player="+maze.respawnClient(clients.get(packet.getPlayerID()), 
+        							//Update RemoteClient with new spawn position
+        							maze.respawnClient(clients.get(packet.getPlayerID()), 
         									new Point(packet.getXpos(), packet.getYpos()),
-        									new Direction(packet.getDir())));
+        									new Direction(packet.getDir()));
         						}
         					}
     					}
     					else if(packet.getAction()==MazewarPacket.ACTION_LEAVE)
     					{
+    						//Quit game if message about local client, or remove remote player if they quit
     						if(packet.getPlayerID()==clientID)
     						{
     							Mazewar.quit();
@@ -512,6 +535,10 @@ System.out.println("Created and hopefully displayed maze");
                 new Mazewar(args);
         }
         
+        /**
+         * Send message that local client moves backward.
+         * @throws IOException
+         */
         public static void sendMoveBack() throws IOException
         {
             MazewarPacket pts=new MazewarPacket();
@@ -523,6 +550,10 @@ System.out.println("Created and hopefully displayed maze");
             pout.writeObject(pts);
         }
         
+        /**
+         * Send message that local client moves forward.
+         * @throws IOException
+         */
         public static void sendMoveForward() throws IOException
         {
             MazewarPacket pts=new MazewarPacket();
@@ -534,6 +565,10 @@ System.out.println("Created and hopefully displayed maze");
             pout.writeObject(pts);
         }
         
+        /**
+         * Send message that local client rotates left.
+         * @throws IOException
+         */
         public static void sendMoveLeft() throws IOException
         {
             MazewarPacket pts=new MazewarPacket();
@@ -545,6 +580,10 @@ System.out.println("Created and hopefully displayed maze");
             pout.writeObject(pts);
         }
         
+        /**
+         * Send message that local client rotates right.
+         * @throws IOException
+         */
         public static void sendMoveRight() throws IOException
         {
             MazewarPacket pts=new MazewarPacket();
@@ -556,19 +595,26 @@ System.out.println("Created and hopefully displayed maze");
             pout.writeObject(pts);
         }
         
+        /**
+         * Send message that local client fires a projectile. Direction and location is consistent
+         * across all clients in the game (due to design + TCPIP) so no position and direction is transmitted.
+         * @throws IOException
+         */
         public static void sendFire() throws IOException
         {
             MazewarPacket pts=new MazewarPacket();
             pts.setAction(MazewarPacket.ACTION_MOVE);
             pts.setType(MazewarPacket.TYPE_FIRE);
             
-            DirectedPoint dpt = maze.getNextSpawn();
-            //pts.setDir(clients.get(clientID).getOrientation().getDirection());
             pts.setPlayerID(clientID);
             
             pout.writeObject(pts);
         }
 
+        /**
+         * Send message that local client spawns at a point in the maze with specific direction.
+         * @throws IOException
+         */
         public static void sendSpawn() throws IOException
         {
             MazewarPacket pts=new MazewarPacket();
@@ -583,9 +629,29 @@ System.out.println("Created and hopefully displayed maze");
             pts.setPlayerName(name);
             
             pout.writeObject(pts);
-            System.out.println("Sent respawn message for ("+dpt.getX()+","+dpt.getY()+") facing "+dpt.getDirection().toString());
+            Mazewar.printLn("Sent respawn message for ("+dpt.getX()+","+dpt.getY()+") facing "+dpt.getDirection().toString());
         }
         
+        /**
+         * Send message that local client's projectile should move forward one position. Direction and location is
+         * consistent across all clients in the game (due to design + TCPIP) so no position and direction is transmitted.
+         * @throws IOException
+         */
+        public static void sendProjectileMove() throws IOException
+        {
+            MazewarPacket pts=new MazewarPacket();
+            pts.setAction(MazewarPacket.ACTION_MOVE);
+            pts.setType(MazewarPacket.TYPE_MOVE_PROJECTILE);
+            
+            pts.setPlayerID(clientID);
+            
+            pout.writeObject(pts);
+        }
+
+        /**
+         * Send message that local client quits the game.
+         * @throws IOException
+         */
         public static void sendLeave() throws IOException
         {
             MazewarPacket pts=new MazewarPacket();
@@ -594,5 +660,17 @@ System.out.println("Created and hopefully displayed maze");
             pts.setPlayerID(clientID);
             
             pout.writeObject(pts);
+        }
+        
+        /**
+         * Print specified debug message if <code>debugMode</code> flag in Mazewar is turned on.
+         * @param value	String debug message to print out
+         */
+        public static void printLn(String value)
+        {
+        	if(debugMode)
+        	{
+        		System.out.println(value);
+        	}
         }
 }

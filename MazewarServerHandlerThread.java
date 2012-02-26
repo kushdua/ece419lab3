@@ -2,6 +2,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
+import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -31,13 +32,15 @@ public class MazewarServerHandlerThread extends Thread {
 					serverQueue.add(fromclientpacket);
 	        	}
 			}	
+		} catch (SocketException e) {
+			System.err.println("SocketException generated. Client most likely disconnected.");
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (ClassNotFoundException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-		}	
+		}
 	}
 	
 
