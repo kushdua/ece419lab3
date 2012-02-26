@@ -1,3 +1,4 @@
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -34,6 +35,8 @@ public class MazewarServerHandlerThread extends Thread {
 			}	
 		} catch (SocketException e) {
 			System.err.println("SocketException generated. Client most likely disconnected.");
+		} catch (EOFException e) {
+			System.err.println("EOFException generated. Client most likely disconnected.");
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
