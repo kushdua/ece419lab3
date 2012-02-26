@@ -50,7 +50,7 @@ public class Mazewar extends JFrame {
 		/**
 		 * Boolean mode for whether or not to print debug messages through printLn function in Mazewar.
 		 */
-		private static boolean debugMode=true;
+		private static boolean debugMode=false;
 	
         /**
          * The default width of the {@link Maze}.
@@ -446,7 +446,7 @@ Mazewar.printLn("Created and displayed maze");
     						}
     						else if(packet.getType()==MazewarPacket.TYPE_MOVE_PROJECTILE)
     						{
-    							Mazewar.printLn("Receied MOVE_PROJECTILE for client "+packet.getPlayerID());
+    							Mazewar.printLn("Recevied MOVE_PROJECTILE for client "+packet.getPlayerID());
     							//Run the timer loop code only once for the client's (from packet) projectile
     							// => move/remove projectile + kill, w.e.
     							Collection deadPrj = new HashSet();
