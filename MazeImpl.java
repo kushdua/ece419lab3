@@ -235,34 +235,6 @@ public class MazeImpl extends Maze implements Serializable, ClientListener, Runn
                 update();
                 notifyClientRemove(client);
         }
-        
-        /**
-         * Check that client can fire in that direction.
-         * @param client	Local client that initiated fire.
-         * @return			True if it can fire in the current direction; false otherwise.
-         */
-        public synchronized boolean canFire(Client client) {
-        	if(client==null){
-        		return false;
-        	}
-        	
-            Point point = getClientPoint(client);
-            Direction d = getClientOrientation(client);
-            CellImpl cell = getCellImpl(point);
-            
-            /* Check that you can fire in that direction */
-            if(cell.isWall(d)) {
-                    return false;
-            }
-            
-            DirectedPoint newPoint = new DirectedPoint(point.move(d), d);
-            if(checkBounds(newPoint)==false)
-            {
-            	return false;
-            }
-            
-        	return true;
-        }
 
         public synchronized boolean clientFire(Client client) {
                 assert(client != null);
@@ -272,6 +244,7 @@ public class MazeImpl extends Maze implements Serializable, ClientListener, Runn
                 }
                 
                 Point point = getClientPoint(client);
+                if(point==null) return false;
                 Direction d = getClientOrientation(client);
                 CellImpl cell = getCellImpl(point);
                 
