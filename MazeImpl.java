@@ -267,8 +267,23 @@ public class MazeImpl extends Maze implements Serializable, ClientListener, Runn
                                 update();
                                 return true; 
                         } else {
-                        // Otherwise fail (bullets will destroy each other)
-                                return false;
+                        	// Otherwise fail (bullets will destroy each other)
+                        	// Assuming no other object classes that could be in the maze
+                        	// => only a bullet can be in the cell, as it's not a client
+                        	Projectile otherProj = (Projectile)contents;
+                        	//Check if we can remove other projectile entry before removing anything
+                        	// => remove all or nothing
+                        	if(projectileMap.containsKey(otherProj) && clientFired.contains(otherProj.getOwner()))
+                        	{
+                        		projectileMap.remove(otherProj);
+                        		clientFired.remove(otherProj.getOwner());
+                        	}
+                        	else
+                        	{
+                        		System.err.println("Cannot reference the other projectile object or owner correctly. Fire cancellation gameplay bug is not fixed!");
+                        	}
+                        	
+                            return false;
                         }
                 }
                 
