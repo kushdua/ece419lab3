@@ -275,8 +275,13 @@ public class MazeImpl extends Maze implements Serializable, ClientListener, Runn
                         	// => remove all or nothing
                         	if(projectileMap.containsKey(otherProj) && clientFired.contains(otherProj.getOwner()))
                         	{
-                        		projectileMap.remove(otherProj);
-                        		clientFired.remove(otherProj.getOwner());
+                        		synchronized(projectileMap)
+                        		{
+	                        		//Remove other projectile from cell, and tracking arrays for projectile and user
+	                        		newCell.setContents(null);
+	                        		projectileMap.remove(otherProj);
+	                        		clientFired.remove(otherProj.getOwner());
+                        		}
                         	}
                         	else
                         	{
