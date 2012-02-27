@@ -56,6 +56,17 @@ Our Design:
 - Some further decisions (such as implementing network messages for projectile movement, sent by owner of
   projectile) are described in corner cases considered during design and/or development and testing.
 
+---------------------------------------------------
+How it differs from proposed design in lab handout:
+---------------------------------------------------
+- No sequence numbers are used on the server side, as server queue operations are synchronized, TCPIP ensures
+  in order transmission of event messages, and server broadcasts events in order (send event 1 to all clients
+  before sending event 2)
+
+- No client side queues were implemented, as TCPIP ensures no gaps in received messages (as opposed to UDP),
+  and if messages are received while display operation for a previous message is performed, those incoming
+  messages are buffered implicitly by the hardware in the OSI Network model
+
 -------------  
 Corner Cases:
 -------------
