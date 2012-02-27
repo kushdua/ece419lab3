@@ -34,6 +34,7 @@ Our Design:
         + (positive) : consistent event order across player screens
         - (negative) : visual lag to clients that are closer to the server, since they have to wait for message
         			   to be received by clients further away for that event, before next event can be sent
+        =>(solution) : HAVE PLAYERS JOIN SERVER BY REGION (AS CLOSE AS POSSIBLE TO CLIENTS IN SAME GAME)
   
 - On GUI events, the client sends a network message only.
 
