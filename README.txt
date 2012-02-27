@@ -9,8 +9,10 @@ Kush Dua			: Student Number 996081957
 -----------------
 Run instructions:
 -----------------
+Compile- run "make" - it will clean previous *class files (invoke clean rule) and recompile everything (all rule)
+
 Server - server.sh <port to listen on> <number of players to join before game starts>
-		Note: <number of players...> is optional; if omitted, server waits for 4 players
+		 Note: <number of players...> is optional; if omitted, server waits for 4 players
 		
 Client - run.sh <address of server> <port of server>
 
