@@ -1,4 +1,7 @@
 import java.io.Serializable;
+import java.util.HashMap;
+
+import com.sun.org.apache.bcel.internal.generic.NEW;
 
 public class MazewarPacket implements Serializable {
 	//Type of MOVE messages
@@ -18,6 +21,7 @@ public class MazewarPacket implements Serializable {
 	public static final int ACTION_JOIN=2;
 	public static final int ACTION_START=3;
 	public static final int ACTION_LEAVE=4;
+	public static final int ACTION_REQ_SEQ=5;
 	public static final int ACTION_INVALID=-1;
 	
 	//Invalid constant for types
@@ -36,6 +40,16 @@ public class MazewarPacket implements Serializable {
 	 * Name for player this message concerns
 	 */
 	private String playerName="";
+	
+	/**
+	 * Sequence number for event packet.
+	 */
+	private int seqNo=0;
+	
+	/**
+	 * HashMap distributed on JOIN events containing connection info for all players
+	 */
+	private HashMap<Integer,NetworkAddress> players=null;
 	
 	/**
 	 * Random seed provided by server initially
@@ -117,5 +131,33 @@ public class MazewarPacket implements Serializable {
 
 	public int getMaxplayer() {
 		return maxplayer;
+	}
+
+	public HashMap<Integer,NetworkAddress> getPlayers() {
+		return players;
+	}
+
+	public void setPlayers(HashMap<Integer,NetworkAddress> players) {
+		this.players = (HashMap<Integer, NetworkAddress>) players.clone();
+	}
+
+	public int getSeqNo() {
+		return seqNo;
+	}
+
+	public void setSeqNo(int seqNo) {
+		this.seqNo = seqNo;
 	}	
+}
+
+class NetworkAddress implements Serializable
+{
+	public String address="";
+	public int port=-1;
+	
+	public NetworkAddress(String newAddress, int newPort)
+	{
+		address=newAddress;
+		port=newPort;
+	}
 }

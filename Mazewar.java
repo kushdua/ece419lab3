@@ -32,11 +32,15 @@ import java.io.Serializable;
 
 import java.io.*;
 import java.net.*;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
+import java.util.concurrent.LinkedBlockingQueue;
 
 /**
  * The entry point and glue code for the game.  It also contains some helpful
@@ -50,7 +54,7 @@ public class Mazewar extends JFrame {
 		/**
 		 * Boolean mode for whether or not to print debug messages through printLn function in Mazewar.
 		 */
-		private static boolean debugMode=false;
+		private static boolean debugMode=true;
 	
         /**
          * The default width of the {@link Maze}.
@@ -135,6 +139,21 @@ public class Mazewar extends JFrame {
          * HashMap storing client objects instantiated locally (key = player ID)
          */
         public static HashMap<Integer, Client> clients = new HashMap<Integer, Client>();
+        
+        /**
+         * Linked blocking queue of received packets buffered until no gaps exist.
+         */
+        public static Map<Integer,MazewarPacket> queue=Collections.synchronizedMap(new HashMap<Integer, MazewarPacket>());
+        
+        /**
+         * Global list of events received at the server
+         */
+    	private static final List<MazewarClientHandlerThread> clientSockets=Collections.synchronizedList(new ArrayList<MazewarClientHandlerThread>());
+    	
+        /**
+         * Variable for tracking previous send event highest sequence seen at this node.
+         */
+        public static int prevSeq=0;
         
         /**
          * GUI (local) client name sa input by user
@@ -244,6 +263,20 @@ public class Mazewar extends JFrame {
     					}
     					else if(packet.getAction()==MazewarPacket.ACTION_START)
     					{
+    						//TODO: Create connections to other clients based on packet contents
+    						synchronized(clientSockets)
+    						{
+    							HashMap<Integer,NetworkAddress> mp = packet.getPlayers();
+    							
+    						    Iterator it = mp.entrySet().iterator();
+    						    while (it.hasNext()) {
+    						        Map.Entry pairs = (Map.Entry)it.next();
+    						        int id=(Integer) pairs.getKey();
+    						        NetworkAddress value=(NetworkAddress) pairs.getValue();
+    						        clientSockets.add(new MazewarClientHandlerThread(new Socket(value.address, value.port)));
+    						    }
+    						}
+    						
     						//Set up maze structures on START message, but wait for SPAWN
     						//of other players before starting gameplay
     						if(ackJoined==true && clientID!=-1)
@@ -403,115 +436,149 @@ Mazewar.printLn("11");
 Mazewar.printLn("12");
 Mazewar.printLn("Created and displayed maze");
 
+					boolean extractedFromQueue=false;
 					//Listen for events and perform appropriate GUI update action... self-explanatory
-    				while((packet=(MazewarPacket)(in.readObject()))!=null)
+    				while(true)
     				{
-    					if(packet.getAction()==MazewarPacket.ACTION_MOVE)
+    					if(queue.isEmpty())
     					{
-    						if(packet.getType()==MazewarPacket.TYPE_MOVE_DOWN_BACKWARD)
-    						{
-    							if(clients.containsKey(packet.getPlayerID()))
-    							{
-    								clients.get(packet.getPlayerID()).backup();
-    							}
-    						}
-    						else if(packet.getType()==MazewarPacket.TYPE_MOVE_UP_FORWARD)
-    						{
-    							if(clients.containsKey(packet.getPlayerID()))
-    							{
-    								clients.get(packet.getPlayerID()).forward();
-    							}
-    						}
-    						else if(packet.getType()==MazewarPacket.TYPE_MOVE_LEFT)
-    						{
-    							if(clients.containsKey(packet.getPlayerID()))
-    							{
-    								clients.get(packet.getPlayerID()).turnLeft();
-    							}
-    						}
-    						else if(packet.getType()==MazewarPacket.TYPE_MOVE_RIGHT)
-    						{
-    							if(clients.containsKey(packet.getPlayerID()))
-    							{
-    								clients.get(packet.getPlayerID()).turnRight();
-    							}
-    						}
-    						else if(packet.getType()==MazewarPacket.TYPE_FIRE)
-    						{
-    							//Fire projectiles regardless of whether it is for GUI or Remote client
-    							//Thread which sends MOVE_PROJECTILE messages only does so for projectiles
-    							//fired by the local GUI client, and leaves the remote ones intact.
-    							//Only MOVE_PROJECTILE messages can move projectiles (whether local or remote).
-	    						clients.get(packet.getPlayerID()).fire();
-    						}
-    						else if(packet.getType()==MazewarPacket.TYPE_MOVE_PROJECTILE)
-    						{
-    							Mazewar.printLn("Recevied MOVE_PROJECTILE for client "+packet.getPlayerID());
-    							//Run the timer loop code only once for the client's (from packet) projectile
-    							// => move/remove projectile + kill, w.e.
-    							Collection deadPrj = new HashSet();
-    							Map projectileMap =((MazeImpl)maze).getProjectileMap();
-    	                        if(!projectileMap.isEmpty()) {
-                                    Iterator it = projectileMap.keySet().iterator();
-                                    synchronized(projectileMap) {
-                                            while(it.hasNext()) {
-                                                    Object o = it.next();
-                                                    //Mazewar.printLn("Projectile owner = "+((Projectile)o).getOwner()+" and packet client = "+clients.get(packet.getPlayerID()));
-                                                    assert(o instanceof Projectile);
-                                                    if(	deadPrj.contains(o)==false &&
-                                                    	((Projectile)o).getOwner()==clients.get(packet.getPlayerID()))
-                                                    {
-                                                    	//Send MOVE_PROJECTILE message
-                                                    	deadPrj.addAll(((MazeImpl)maze).moveProjectile((Projectile)o));
-                                                    }
-                                            }
-                                            it = deadPrj.iterator();
-                                            while(it.hasNext()) {
-                                                    Object o = it.next();
-                                                    assert(o instanceof Projectile);
-                                                    Projectile prj = (Projectile)o;
-                                                    projectileMap.remove(prj);
-                                                    ((MazeImpl)maze).getClientFired().remove(prj.getOwner());
-                                            }
-                                            deadPrj.clear();
-                                    }
-    	                        }
-    						}
-        					else if(packet.getType()==MazewarPacket.TYPE_SPAWN)
+    						try {
+								Thread.sleep(0,999999);
+							} catch (InterruptedException e) {
+								e.printStackTrace();
+							}
+    					}
+    					
+    					if(queue.isEmpty() || queue.containsKey(prevSeq+1)==false)
+    					{
+    						continue;
+    					}
+    					else
+    					{
+    						//Process events from queue
+        					synchronized(queue)
         					{
-        						//Mazewar.printLn("Received spawn for client "+packet.getPlayerID());
-        						if(clientID==packet.getPlayerID())
-        						{
-        							//Update GUIClient with new spawn position
-        							if(maze.respawnClient(clients.get(clientID), 
-        									new Point(packet.getXpos(), packet.getYpos()),
-        									new Direction(packet.getDir()))==false)
-        							{
-        								//Try to respawn again as we couldn't place ourselves in the maze
-        								sendSpawn();
-        							}
-        						}
-        						else
-        						{
-        							//Update RemoteClient with new spawn position
-        							maze.respawnClient(clients.get(packet.getPlayerID()), 
-        									new Point(packet.getXpos(), packet.getYpos()),
-        									new Direction(packet.getDir()));
-        						}
+        						packet=queue.remove(++prevSeq);
         					}
     					}
-    					else if(packet.getAction()==MazewarPacket.ACTION_LEAVE)
-    					{
-    						//Quit game if message about local client, or remove remote player if they quit
-    						if(packet.getPlayerID()==clientID)
-    						{
-    							Mazewar.quit();
-    						}
-    						else
-    						{
-    							maze.removeClient(clients.get(packet.getPlayerID()));
-    						}
-    					}
+					
+						//If packet is not next expected, queue it until you receive this next one.
+						if(packet.getSeqNo()!=prevSeq+1)
+						{
+							synchronized(queue)
+							{
+								queue.put(packet.getSeqNo(), packet);
+							}
+						}
+						else
+						{
+	    					if(packet.getAction()==MazewarPacket.ACTION_MOVE)
+	    					{
+	    						if(packet.getType()==MazewarPacket.TYPE_MOVE_DOWN_BACKWARD)
+	    						{
+	    							if(clients.containsKey(packet.getPlayerID()))
+	    							{
+	    								clients.get(packet.getPlayerID()).backup();
+	    							}
+	    						}
+	    						else if(packet.getType()==MazewarPacket.TYPE_MOVE_UP_FORWARD)
+	    						{
+	    							if(clients.containsKey(packet.getPlayerID()))
+	    							{
+	    								clients.get(packet.getPlayerID()).forward();
+	    							}
+	    						}
+	    						else if(packet.getType()==MazewarPacket.TYPE_MOVE_LEFT)
+	    						{
+	    							if(clients.containsKey(packet.getPlayerID()))
+	    							{
+	    								clients.get(packet.getPlayerID()).turnLeft();
+	    							}
+	    						}
+	    						else if(packet.getType()==MazewarPacket.TYPE_MOVE_RIGHT)
+	    						{
+	    							if(clients.containsKey(packet.getPlayerID()))
+	    							{
+	    								clients.get(packet.getPlayerID()).turnRight();
+	    							}
+	    						}
+	    						else if(packet.getType()==MazewarPacket.TYPE_FIRE)
+	    						{
+	    							//Fire projectiles regardless of whether it is for GUI or Remote client
+	    							//Thread which sends MOVE_PROJECTILE messages only does so for projectiles
+	    							//fired by the local GUI client, and leaves the remote ones intact.
+	    							//Only MOVE_PROJECTILE messages can move projectiles (whether local or remote).
+		    						clients.get(packet.getPlayerID()).fire();
+	    						}
+	    						else if(packet.getType()==MazewarPacket.TYPE_MOVE_PROJECTILE)
+	    						{
+	    							Mazewar.printLn("Recevied MOVE_PROJECTILE for client "+packet.getPlayerID());
+	    							//Run the timer loop code only once for the client's (from packet) projectile
+	    							// => move/remove projectile + kill, w.e.
+	    							Collection deadPrj = new HashSet();
+	    							Map projectileMap =((MazeImpl)maze).getProjectileMap();
+	    	                        if(!projectileMap.isEmpty()) {
+	                                    Iterator it = projectileMap.keySet().iterator();
+	                                    synchronized(projectileMap) {
+	                                            while(it.hasNext()) {
+	                                                    Object o = it.next();
+	                                                    //Mazewar.printLn("Projectile owner = "+((Projectile)o).getOwner()+" and packet client = "+clients.get(packet.getPlayerID()));
+	                                                    assert(o instanceof Projectile);
+	                                                    if(	deadPrj.contains(o)==false &&
+	                                                    	((Projectile)o).getOwner()==clients.get(packet.getPlayerID()))
+	                                                    {
+	                                                    	//Send MOVE_PROJECTILE message
+	                                                    	deadPrj.addAll(((MazeImpl)maze).moveProjectile((Projectile)o));
+	                                                    }
+	                                            }
+	                                            it = deadPrj.iterator();
+	                                            while(it.hasNext()) {
+	                                                    Object o = it.next();
+	                                                    assert(o instanceof Projectile);
+	                                                    Projectile prj = (Projectile)o;
+	                                                    projectileMap.remove(prj);
+	                                                    ((MazeImpl)maze).getClientFired().remove(prj.getOwner());
+	                                            }
+	                                            deadPrj.clear();
+	                                    }
+	    	                        }
+	    						}
+	        					else if(packet.getType()==MazewarPacket.TYPE_SPAWN)
+	        					{
+	        						//Mazewar.printLn("Received spawn for client "+packet.getPlayerID());
+	        						if(clientID==packet.getPlayerID())
+	        						{
+	        							//Update GUIClient with new spawn position
+	        							if(maze.respawnClient(clients.get(clientID), 
+	        									new Point(packet.getXpos(), packet.getYpos()),
+	        									new Direction(packet.getDir()))==false)
+	        							{
+	        								//Try to respawn again as we couldn't place ourselves in the maze
+	        								sendSpawn();
+	        							}
+	        						}
+	        						else
+	        						{
+	        							//Update RemoteClient with new spawn position
+	        							maze.respawnClient(clients.get(packet.getPlayerID()), 
+	        									new Point(packet.getXpos(), packet.getYpos()),
+	        									new Direction(packet.getDir()));
+	        						}
+	        					}
+	    					}
+	    					else if(packet.getAction()==MazewarPacket.ACTION_LEAVE)
+	    					{
+	    						//Quit game if message about local client, or remove remote player if they quit
+	    						if(packet.getPlayerID()==clientID)
+	    						{
+	    							Mazewar.quit();
+	    						}
+	    						else
+	    						{
+	    							maze.removeClient(clients.get(packet.getPlayerID()));
+	    						}
+	    					}
+						}//end of apply action right away
     				}
     			} catch (IOException e) {
     				e.printStackTrace();
@@ -660,6 +727,28 @@ Mazewar.printLn("Created and displayed maze");
             pts.setPlayerID(clientID);
             
             pout.writeObject(pts);
+        }
+        
+        private static int getSequenceNumber() throws IOException, ClassNotFoundException
+        {
+        	MazewarPacket pts = new MazewarPacket();
+        	pts.setAction(MazewarPacket.ACTION_REQ_SEQ);
+        	
+        	pts.setPlayerID(clientID);
+        	pout.writeObject(pts);
+        	
+        	MazewarPacket packet = null;
+        	
+			while((packet=(MazewarPacket)(pin.readObject()))!=null)
+			{
+				//If packet is not next expected, queue it until you receive this next one.
+				if(packet.getType()==MazewarPacket.ACTION_REQ_SEQ)
+				{
+					return packet.getSeqNo();
+				}
+			}
+        	
+        	return -1;
         }
         
         /**
