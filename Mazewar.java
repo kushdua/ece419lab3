@@ -283,13 +283,14 @@ public class Mazewar extends JFrame {
     						        Map.Entry pairs = (Map.Entry)it.next();
     						        int id=(Integer) pairs.getKey();
     						        NetworkAddress value=(NetworkAddress) pairs.getValue();
-    						        if(id!=clientID && clientSockets.contains(id)==false)
-    						        {
+    						        //Add even localhost (GUI) client, so event application code doesn't have to be repeated
+    						        //if(id!=clientID && clientSockets.contains(id)==false)
+    						        //{
     						        	MazewarClientHandlerThread temp = new MazewarClientHandlerThread(new Socket(value.address, value.port));
     						        	clientSockets.add(temp);
     						        	temp.toPlayer=new ObjectOutputStream(temp.getClientSocket().getOutputStream());
     						        	temp.fromplayer=new ObjectInputStream(temp.getClientSocket().getInputStream());
-    						        }
+    						        //}
     						    }
     						}
     						
@@ -452,14 +453,13 @@ Mazewar.printLn("11");
 Mazewar.printLn("12");
 Mazewar.printLn("Created and displayed maze");
 
-					boolean extractedFromQueue=false;
 					//Listen for events and perform appropriate GUI update action... self-explanatory
     				while(true)
     				{
     					if(queue.isEmpty())
     					{
     						try {
-								Thread.sleep(0,999999);
+								Thread.sleep(0,1000);
 							} catch (InterruptedException e) {
 								e.printStackTrace();
 							}

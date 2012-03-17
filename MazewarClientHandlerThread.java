@@ -29,6 +29,7 @@ public class MazewarClientHandlerThread extends Thread {
 			while((fromclientpacket = (MazewarPacket) fromplayer.readObject())!=null){
 				synchronized(Mazewar.queue)
 	        	{
+					//Add this player to list of players if we don't have them before
 					if(fromclientpacket.getType()==MazewarPacket.TYPE_SPAWN && myNum==-1)
 					{
 						synchronized(Mazewar.clientSockets)
