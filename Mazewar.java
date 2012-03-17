@@ -121,6 +121,11 @@ public class Mazewar extends JFrame {
         private int serverPort=0;
         
         /**
+         * Game port (same on all players)
+         */
+        private int gamePort=0;
+        
+        /**
          * Client socket for communication with server
          */
         private Socket clientSocket=null;
@@ -205,13 +210,14 @@ public class Mazewar extends JFrame {
         		//Populate from CL args
 	    		if(args.length!=2)
 	    		{
-	    			System.out.println("Usage: java Mazewar <server address> <server port>");
+	    			System.out.println("Usage: java Mazewar <server address> <server port> <game listen port for each client>");
 	    			System.exit(-1);
 	    		}
 	    		else
 	    		{
 	    			serverAddress=args[0];
 	    			serverPort=Integer.parseInt(args[1]);
+	    			gamePort=Integer.parseInt(args[2]);
 	    		}
 	    		
                 
@@ -337,7 +343,7 @@ public class Mazewar extends JFrame {
     			                {
     			                	//Respawn because we couldn't add ourselves at this point...
     			                	//someone/something else is here now
-    			                	sendSpawn();
+    			                	sendSpawn(getSequenceNumber());
     				                continue;
     			                }
     			                //Mazewar.printLn("Player "+packet.getPlayerID()+" added at ("+packet.getXpos()+","+packet.getYpos()+") facing "+packet.getDir());
@@ -554,7 +560,7 @@ Mazewar.printLn("Created and displayed maze");
 	        									new Direction(packet.getDir()))==false)
 	        							{
 	        								//Try to respawn again as we couldn't place ourselves in the maze
-	        								sendSpawn();
+	        								sendSpawn(getSequenceNumber());
 	        							}
 	        						}
 	        						else
@@ -606,11 +612,12 @@ Mazewar.printLn("Created and displayed maze");
          * Send message that local client moves backward.
          * @throws IOException
          */
-        public static void sendMoveBack() throws IOException
+        public static void sendMoveBack(int seqNo) throws IOException
         {
             MazewarPacket pts=new MazewarPacket();
             pts.setAction(MazewarPacket.ACTION_MOVE);
             pts.setType(MazewarPacket.TYPE_MOVE_DOWN_BACKWARD);
+            pts.setSeqNo(seqNo);
             
             pts.setPlayerID(clientID);
             
@@ -621,11 +628,12 @@ Mazewar.printLn("Created and displayed maze");
          * Send message that local client moves forward.
          * @throws IOException
          */
-        public static void sendMoveForward() throws IOException
+        public static void sendMoveForward(int seqNo) throws IOException
         {
             MazewarPacket pts=new MazewarPacket();
             pts.setAction(MazewarPacket.ACTION_MOVE);
             pts.setType(MazewarPacket.TYPE_MOVE_UP_FORWARD);
+            pts.setSeqNo(seqNo);
             
             pts.setPlayerID(clientID);
             
@@ -636,11 +644,12 @@ Mazewar.printLn("Created and displayed maze");
          * Send message that local client rotates left.
          * @throws IOException
          */
-        public static void sendMoveLeft() throws IOException
+        public static void sendMoveLeft(int seqNo) throws IOException
         {
             MazewarPacket pts=new MazewarPacket();
             pts.setAction(MazewarPacket.ACTION_MOVE);
             pts.setType(MazewarPacket.TYPE_MOVE_LEFT);
+            pts.setSeqNo(seqNo);
             
             pts.setPlayerID(clientID);
             
@@ -651,11 +660,12 @@ Mazewar.printLn("Created and displayed maze");
          * Send message that local client rotates right.
          * @throws IOException
          */
-        public static void sendMoveRight() throws IOException
+        public static void sendMoveRight(int seqNo) throws IOException
         {
             MazewarPacket pts=new MazewarPacket();
             pts.setAction(MazewarPacket.ACTION_MOVE);
             pts.setType(MazewarPacket.TYPE_MOVE_RIGHT);
+            pts.setSeqNo(seqNo);
             
             pts.setPlayerID(clientID);
             
@@ -667,11 +677,12 @@ Mazewar.printLn("Created and displayed maze");
          * across all clients in the game (due to design + TCPIP) so no position and direction is transmitted.
          * @throws IOException
          */
-        public static void sendFire() throws IOException
+        public static void sendFire(int seqNo) throws IOException
         {
             MazewarPacket pts=new MazewarPacket();
             pts.setAction(MazewarPacket.ACTION_MOVE);
             pts.setType(MazewarPacket.TYPE_FIRE);
+            pts.setSeqNo(seqNo);
             
             pts.setPlayerID(clientID);
             
@@ -682,11 +693,12 @@ Mazewar.printLn("Created and displayed maze");
          * Send message that local client spawns at a point in the maze with specific direction.
          * @throws IOException
          */
-        public static void sendSpawn() throws IOException
+        public static void sendSpawn(int seqNo) throws IOException
         {
             MazewarPacket pts=new MazewarPacket();
             pts.setAction(MazewarPacket.ACTION_MOVE);
             pts.setType(MazewarPacket.TYPE_SPAWN);
+            pts.setSeqNo(seqNo);
             
             DirectedPoint dpt = maze.getNextSpawn();
             pts.setDir(dpt.getDirection().getDirection());
@@ -704,11 +716,12 @@ Mazewar.printLn("Created and displayed maze");
          * consistent across all clients in the game (due to design + TCPIP) so no position and direction is transmitted.
          * @throws IOException
          */
-        public static void sendProjectileMove() throws IOException
+        public static void sendProjectileMove(int seqNo) throws IOException
         {
             MazewarPacket pts=new MazewarPacket();
             pts.setAction(MazewarPacket.ACTION_MOVE);
             pts.setType(MazewarPacket.TYPE_MOVE_PROJECTILE);
+            pts.setSeqNo(seqNo);
             
             pts.setPlayerID(clientID);
             
@@ -719,17 +732,18 @@ Mazewar.printLn("Created and displayed maze");
          * Send message that local client quits the game.
          * @throws IOException
          */
-        public static void sendLeave() throws IOException
+        public static void sendLeave(int seqNo) throws IOException
         {
             MazewarPacket pts=new MazewarPacket();
             pts.setAction(MazewarPacket.ACTION_LEAVE);
+            pts.setSeqNo(seqNo);
             
             pts.setPlayerID(clientID);
             
             pout.writeObject(pts);
         }
         
-        private static int getSequenceNumber() throws IOException, ClassNotFoundException
+        public static int getSequenceNumber() throws IOException, ClassNotFoundException
         {
         	MazewarPacket pts = new MazewarPacket();
         	pts.setAction(MazewarPacket.ACTION_REQ_SEQ);
@@ -739,16 +753,18 @@ Mazewar.printLn("Created and displayed maze");
         	
         	MazewarPacket packet = null;
         	
-			while((packet=(MazewarPacket)(pin.readObject()))!=null)
+			while(true)
 			{
+				packet=(MazewarPacket)(pin.readObject());
+				if(packet==null)
+					continue;
+				
 				//If packet is not next expected, queue it until you receive this next one.
 				if(packet.getType()==MazewarPacket.ACTION_REQ_SEQ)
 				{
 					return packet.getSeqNo();
 				}
 			}
-        	
-        	return -1;
         }
         
         /**

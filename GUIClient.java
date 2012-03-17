@@ -47,57 +47,75 @@ public class GUIClient extends LocalClient implements KeyListener {
                 		//TODO: Assume clients cannot quit.. as answered on discussion board
                 		// but leave it in for now, as dynamic leave should work in our game
                 		try {
-							Mazewar.sendLeave();
+							Mazewar.sendLeave(Mazewar.getSequenceNumber());
 						} catch (IOException e1) {
 							// TODO Auto-generated catch block
 							e1.printStackTrace();
 						}
+                		catch (ClassNotFoundException e2){
+                			e2.printStackTrace();
+                		}
                 // Up-arrow moves forward.
                 } else if(e.getKeyCode() == KeyEvent.VK_UP) {
                 		//Send packet with move forward maybe just put it here.. then call forward when you recv in MW
                         //forward();
                 		try {
-							Mazewar.sendMoveForward();
+							Mazewar.sendMoveForward(Mazewar.getSequenceNumber());
 						} catch (IOException e1) {
 							// TODO Auto-generated catch block
 							e1.printStackTrace();
 						}
+                		catch (ClassNotFoundException e2){
+                			e2.printStackTrace();
+                		}
                 // Down-arrow moves backward.
                 } else if(e.getKeyCode() == KeyEvent.VK_DOWN) {
                         //backup();
                 		try {
-							Mazewar.sendMoveBack();
+							Mazewar.sendMoveBack(Mazewar.getSequenceNumber());
 						} catch (IOException e1) {
 							// TODO Auto-generated catch block
 							e1.printStackTrace();
 						}
+                		catch (ClassNotFoundException e2){
+                			e2.printStackTrace();
+                		}
                 // Left-arrow turns left.
                 } else if(e.getKeyCode() == KeyEvent.VK_LEFT) {
                         //turnLeft();
                 		try {
-							Mazewar.sendMoveLeft();
+							Mazewar.sendMoveLeft(Mazewar.getSequenceNumber());
 						} catch (IOException e1) {
 							// TODO Auto-generated catch block
 							e1.printStackTrace();
 						}
+                		catch (ClassNotFoundException e2){
+                			e2.printStackTrace();
+                		}
                 // Right-arrow turns right.
                 } else if(e.getKeyCode() == KeyEvent.VK_RIGHT) {
                         //turnRight();
                 		try {
-							Mazewar.sendMoveRight();
+							Mazewar.sendMoveRight(Mazewar.getSequenceNumber());
 						} catch (IOException e1) {
 							// TODO Auto-generated catch block
 							e1.printStackTrace();
 						}
+                		catch (ClassNotFoundException e2){
+                			e2.printStackTrace();
+                		}
                 // Spacebar fires.
                 } else if(e.getKeyCode() == KeyEvent.VK_SPACE) {
                         //fire();
                 		try {
-							Mazewar.sendFire();
+							Mazewar.sendFire(Mazewar.getSequenceNumber());
 						} catch (IOException e1) {
 							// TODO Auto-generated catch block
 							e1.printStackTrace();
 						}
+                		catch (ClassNotFoundException e2){
+                			e2.printStackTrace();
+                		}
                 }
         }
         
