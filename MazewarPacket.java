@@ -1,8 +1,6 @@
 import java.io.Serializable;
 import java.util.HashMap;
 
-import com.sun.org.apache.bcel.internal.generic.NEW;
-
 public class MazewarPacket implements Serializable {
 	//Type of MOVE messages
 	public static final int TYPE_MOVE_LEFT=1;

@@ -367,11 +367,14 @@ public class MazeImpl extends Maze implements Serializable, ClientListener, Runn
                                                 {
                                                 	//Send MOVE_PROJECTILE message
                                                 	try {
-														Mazewar.sendProjectileMove();
+														Mazewar.sendProjectileMove(Mazewar.getSequenceNumber());
 													} catch (IOException e) {
 														// TODO Auto-generated catch block
 														e.printStackTrace();
 													}
+							                		catch (ClassNotFoundException e2){
+							                			e2.printStackTrace();
+							                		}
                                                 }
                                         }
                                         //Commented out because this is done in Mazewar upon receiving
@@ -563,11 +566,14 @@ public class MazeImpl extends Maze implements Serializable, ClientListener, Runn
                 if(target instanceof GUIClient)
                 {
                 	try {
-						Mazewar.sendSpawn();
+						Mazewar.sendSpawn(Mazewar.getSequenceNumber());
 					} catch (IOException e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}
+            		catch (ClassNotFoundException e2){
+            			e2.printStackTrace();
+            		}
                 }
                 update();
                 notifyClientKilled(source, target);

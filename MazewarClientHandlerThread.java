@@ -11,6 +11,9 @@ import java.util.List;
 
 public class MazewarClientHandlerThread extends Thread {
 	private Socket socket = null;
+	private int myNum=-1;
+	public ObjectOutputStream toPlayer=null;
+	public ObjectInputStream fromplayer=null;
 	
 	public MazewarClientHandlerThread(Socket accept) {
 		super("MazewarServerHandlerThread");
@@ -22,18 +25,36 @@ public class MazewarClientHandlerThread extends Thread {
 		//Handle incoming packet and add it to queue of events to process
 		//Mazewar server would send that packet
         try {
-			ObjectInputStream fromplayer = new ObjectInputStream(socket.getInputStream());
 			MazewarPacket fromclientpacket = null;
 			while((fromclientpacket = (MazewarPacket) fromplayer.readObject())!=null){
 				synchronized(Mazewar.queue)
 	        	{
+					if(fromclientpacket.getType()==MazewarPacket.TYPE_SPAWN && myNum==-1)
+					{
+						synchronized(Mazewar.clientSockets)
+						{
+							if(Mazewar.clientSockets.contains(fromclientpacket.getPlayerID())==false)
+							{
+								Mazewar.clientSockets.add(fromclientpacket.getPlayerID(), this);
+								myNum=fromclientpacket.getPlayerID();
+							}
+						}
+					}
 					Mazewar.queue.put(fromclientpacket.getSeqNo(),fromclientpacket);
 	        	}
 			}	
 		} catch (SocketException e) {
 			System.err.println("SocketException generated. Game client most likely disconnected.");
+			synchronized(Mazewar.clientSockets)
+			{
+				Mazewar.clientSockets.remove(myNum);
+			}
 		} catch (EOFException e) {
 			System.err.println("EOFException generated. Game client most likely disconnected.");
+			synchronized(Mazewar.clientSockets)
+			{
+				Mazewar.clientSockets.remove(myNum);
+			}
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
