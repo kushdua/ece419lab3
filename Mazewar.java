@@ -74,6 +74,8 @@ public class Mazewar extends JFrame {
          * the same seed value, or your mazes will be different.
          */
         private int mazeSeed = 42;
+        
+        public final static int GAME_PORT=8192;
 
         /**
          * The {@link Maze} that the game uses.
@@ -223,7 +225,7 @@ public class Mazewar extends JFrame {
 	    		}
 	    		
 	    		//Start listening on game port
-	    		new MazewarClientServer(gamePort);
+	    		new MazewarClientServer(Mazewar.GAME_PORT);
                 
                 // Throw up a dialog to get the GUIClient name.
                 name = JOptionPane.showInputDialog("Enter your name");
@@ -286,7 +288,7 @@ public class Mazewar extends JFrame {
     						        //Add even localhost (GUI) client, so event application code doesn't have to be repeated
     						        //if(id!=clientID && clientSockets.contains(id)==false)
     						        //{
-    						        	MazewarClientHandlerThread temp = new MazewarClientHandlerThread(new Socket(value.address, value.port));
+    						        	MazewarClientHandlerThread temp = new MazewarClientHandlerThread(new Socket(value.address, Mazewar.GAME_PORT));
     						        	clientSockets.add(temp);
     						        	temp.toPlayer=new ObjectOutputStream(temp.getClientSocket().getOutputStream());
     						        	temp.fromplayer=new ObjectInputStream(temp.getClientSocket().getInputStream());
