@@ -11,6 +11,7 @@ import java.util.List;
 
 public class MazewarServerHandlerThread extends Thread {
 	private Socket socket = null;
+	private String IP = null;
 	
 	//Global list of events received at the server
 	public static final List<MazewarPacket> serverQueue=Collections.synchronizedList(new ArrayList<MazewarPacket>());
@@ -18,6 +19,8 @@ public class MazewarServerHandlerThread extends Thread {
 	public MazewarServerHandlerThread(Socket accept) {
 		super("MazewarServerHandlerThread");
 		this.socket = accept;
+		this.IP = accept.getInetAddress().toString();
+		//this.IP= accept.getRemoteSocketAddress().toString();
 		System.out.println("Created new Thread to handle remote server client");
 	}
 
@@ -49,6 +52,9 @@ public class MazewarServerHandlerThread extends Thread {
 
     public Socket getClientSocket() {
         return socket;
+    }
+    public String getClientIP() {
+        return IP;
     }
 
 }

@@ -1,6 +1,7 @@
 import java.net.*;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.io.*;
@@ -12,9 +13,11 @@ public class MazewarServer {
     //private static List<Socket> clientSockets = new LinkedList<Socket>();
     private int seeds=42;
     private final int topindex = 0;
-
+    private int seqno;
 	//keeps tracks of number of clients currently joined the game
 	private int currClient=0;
+	HashMap<Integer,NetworkAddress> Player;
+	
 	
     public static void main(String[] args) throws IOException {
     	new MazewarServer(args);
@@ -55,9 +58,17 @@ public class MazewarServer {
         		toclientpacket.setSeed(seeds);
         		toclientpacket.setPlayerID(currClient-1);
         		toclientpacket.setMaxplayer(waitForNumClients);
+        		// grap the ip address
+        		String ip;
+        		ip = clients.get(currClient-1).getClientIP();
+        		NetworkAddress net1 = new NetworkAddress(ip,0);
+        		Player.put(currClient-1, net1);
+        		//toclientpacket.setPlayers(currClient-1,net1);
 	        	//initialize and get ready for game to begin soon
 	        	toplayer[currClient-1] = new ObjectOutputStream(clients.get(currClient-1).getClientSocket().getOutputStream());
+	        	//toplayer[currClient-1] = new ObjectOutputStream(clients.get(currClient-1).getClientIP();
 	        	toplayer[currClient-1].writeObject(toclientpacket);
+	        	
         	}
         }//Exit accepting connections
         
@@ -69,6 +80,11 @@ public class MazewarServer {
         	MazewarPacket toclientpacket = new MazewarPacket();
     		toclientpacket.setAction(MazewarPacket.ACTION_START);
     		toclientpacket.setPlayerID(i);
+    		toclientpacket.setPlayers(Player);
+    		/*
+    		 * Need to send network ip address queue to all the clients
+    		 * that contains ip information of all the clients connected so far  
+    		 */
         	toplayer[i].writeObject(toclientpacket);
         }
 
@@ -88,8 +104,8 @@ public class MazewarServer {
         		else{
         			//System.out.println("QUEUE IS NONEMPTY");
         			MazewarPacket toclientpacket =  (MazewarPacket) Queue.remove(topindex);
-            		//need to broadcast this packet, so send it to all the clients
-            		for(int i =0;i<waitForNumClients;i++) {
+            		//broadcasting this packet, so send it to all the clients
+            		/*for(int i =0;i<waitForNumClients;i++) {
             			try
             			{
             				toplayer[i].writeObject(toclientpacket);
@@ -98,7 +114,10 @@ public class MazewarServer {
             			{
             				//Client must have disconnected.. Hide the error though.
             			}
-            		}
+            		}*/
+        			seqno++; 
+        			toclientpacket.setSeqNo(seqno);
+        			toplayer[toclientpacket.getPlayerID()].writeObject(toclientpacket);
         		}	
         	}
         }
@@ -107,4 +126,5 @@ public class MazewarServer {
         //Send JOIN packet to all clients with their initial position (they know their own ID from START)
         
     }
+
 }

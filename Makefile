@@ -14,7 +14,7 @@ CAT=cat
 
 # The only file we are interested in is Mazewar.class,
 # the rest are handled by the dependencies.
-FILES=Mazewar.class MazewarServer.class MazewarServerHandlerThread.class MazewarPacket.class
+FILES=Mazewar.class MazewarServer.class MazewarServerHandlerThread.class MazewarPacket.class MazewarClientServer.class MazewarClientHandlerThread.class
 
 all: clean ${FILES}
 
