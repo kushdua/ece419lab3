@@ -16,7 +16,7 @@ public class MazewarServer {
     private int seqno;
 	//keeps tracks of number of clients currently joined the game
 	private int currClient=0;
-	HashMap<Integer,NetworkAddress> Player;
+	HashMap<Integer,NetworkAddress> Player= new HashMap<Integer, NetworkAddress>();
 	
 	
     public static void main(String[] args) throws IOException {
