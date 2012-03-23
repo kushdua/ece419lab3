@@ -224,7 +224,8 @@ public class Mazewar extends JFrame {
 	    		}
 	    		
 	    		//Start listening on game port
-	    		new MazewarClientServer(Mazewar.GAME_PORT);
+	    		MazewarClientServer tempServer = new MazewarClientServer(Mazewar.GAME_PORT);
+	    		tempServer.start();
                 
                 // Throw up a dialog to get the GUIClient name.
                 name = JOptionPane.showInputDialog("Enter your name");
@@ -287,6 +288,7 @@ public class Mazewar extends JFrame {
     						        //Add even localhost (GUI) client, so event application code doesn't have to be repeated
     						        //if(id!=clientID && clientSockets.contains(id)==false)
     						        //{
+    						        	System.out.println("Trying to connect to client "+id+" at "+value.address+":"+Mazewar.GAME_PORT);
     						        	MazewarClientHandlerThread temp = new MazewarClientHandlerThread(new Socket(value.address, Mazewar.GAME_PORT));
     						        	clientSockets.add(temp);
     						        	temp.toPlayer=new ObjectOutputStream(temp.getClientSocket().getOutputStream());

@@ -22,13 +22,18 @@ public class MazewarClientServer extends Thread {
     {
         ServerSocket serverSocket = null;
 		try {
+			System.out.println("Client listening for other players on port "+gamePort);
 			serverSocket = new ServerSocket(gamePort);
 
 	        while(true)
 	        {
 	        	MazewarClientHandlerThread temp = new MazewarClientHandlerThread(serverSocket.accept());
-	        	temp.fromplayer=new ObjectInputStream(temp.getClientSocket().getInputStream());
-	        	temp.toPlayer=new ObjectOutputStream(temp.getClientSocket().getOutputStream());
+	        	synchronized(Mazewar.clientSockets)
+				{
+					Mazewar.clientSockets.add(temp);
+					temp.fromplayer=new ObjectInputStream(temp.getClientSocket().getInputStream());
+					temp.toPlayer=new ObjectOutputStream(temp.getClientSocket().getOutputStream());
+				}
 	        }
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
