@@ -214,14 +214,13 @@ public class Mazewar extends JFrame {
         		//Populate from CL args
 	    		if(args.length!=2)
 	    		{
-	    			System.out.println("Usage: java Mazewar <server address> <server port> <game listen port for each client>");
+	    			System.out.println("Usage: java Mazewar <server address> <server port>");
 	    			System.exit(-1);
 	    		}
 	    		else
 	    		{
 	    			serverAddress=args[0];
 	    			serverPort=Integer.parseInt(args[1]);
-	    			gamePort=Integer.parseInt(args[2]);
 	    		}
 	    		
 	    		//Start listening on game port
