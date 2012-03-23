@@ -20,6 +20,7 @@ public class MazewarServerHandlerThread extends Thread {
 		super("MazewarServerHandlerThread");
 		this.socket = accept;
 		this.IP = accept.getInetAddress().toString();
+		System.out.println("the IP address is"+this.IP);
 		//this.IP= accept.getRemoteSocketAddress().toString();
 		System.out.println("Created new Thread to handle remote server client");
 	}
