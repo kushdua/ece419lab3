@@ -157,7 +157,7 @@ public class Mazewar extends JFrame {
         /**
          * Global list of events received at the server
          */
-    	public static final List<MazewarClientHandlerThread> clientSockets=Collections.synchronizedList(new ArrayList<MazewarClientHandlerThread>());
+    	public static Map<String, MazewarClientHandlerThread> clientSockets=Collections.synchronizedMap(new HashMap<String, MazewarClientHandlerThread>());
     	
         /**
          * Variable for tracking previous send event highest sequence seen at this node.
@@ -275,6 +275,7 @@ public class Mazewar extends JFrame {
     					}
     					else if(packet.getAction()==MazewarPacket.ACTION_START)
     					{
+System.out.println("Got action_start message");
     						//TODO: Create connections to other clients based on packet contents from START message
     						synchronized(clientSockets)
     						{
@@ -286,17 +287,22 @@ public class Mazewar extends JFrame {
     						        int id=(Integer) pairs.getKey();
     						        NetworkAddress value=(NetworkAddress) pairs.getValue();
     						        //Add even localhost (GUI) client, so event application code doesn't have to be repeated
-    						        //if(id!=clientID && clientSockets.contains(id)==false)
-    						        //{
-    						        	System.out.println("Trying to connect to client "+id+" at "+value.address+":"+Mazewar.GAME_PORT);
-    						        	MazewarClientHandlerThread temp = new MazewarClientHandlerThread(new Socket(value.address, Mazewar.GAME_PORT));
-    						        	clientSockets.add(temp);
+    						        System.out.println("MW Trying to connect to client "+id+" at "+value.address+":"+Mazewar.GAME_PORT);
+						        	MazewarClientHandlerThread temp = new MazewarClientHandlerThread(new Socket(value.address, Mazewar.GAME_PORT));
+    						        if(clientSockets.containsKey(value.address)==false)
+    						        {
+//System.out.println("MW putting socket into array");
+    						        	clientSockets.put(value.address,temp);
+    						        	//System.out.println("MW before getting OS");
     						        	temp.toPlayer=new ObjectOutputStream(temp.getClientSocket().getOutputStream());
+    						        	//System.out.println("MW before getting IS");
     						        	temp.fromplayer=new ObjectInputStream(temp.getClientSocket().getInputStream());
-    						        //}
+    						        	//System.out.println("MW after getting IS");
+    						        	temp.start();
+    						        }
     						    }
     						}
-    						
+//System.out.println("ack joined = "+ackJoined+", total num players client is waiting for = "+numplayers+" and list size = "+clientSockets.size());
     						//Set up maze structures on START message, but wait for SPAWN
     						//of other players before starting gameplay
     						if(ackJoined==true && clientID!=-1)
@@ -317,23 +323,12 @@ public class Mazewar extends JFrame {
 				                assert(scoreModel != null);
 				                maze.addMazeListener(scoreModel);
 				                
-    							//Send spawn message
-				                pts=new MazewarPacket();
-				                pts.setAction(MazewarPacket.ACTION_MOVE);
-				                pts.setType(MazewarPacket.TYPE_SPAWN);
-
-    							//Mazewar.printLn("Before getting spawn point and direction");
-				                DirectedPoint dpt = maze.getNextSpawn();
-				                pts.setDir(dpt.getDirection().getDirection());
-				                pts.setXpos(dpt.getX());
-				                pts.setYpos(dpt.getY());
-				                pts.setPlayerID(clientID);
-				                pts.setPlayerName(name);
-
-    							//Mazewar.printLn("Before sending spawn packet");
-				                out.writeObject(pts);
-				                
-				                //Mazewar.printLn("Created maze and sent spawn message");
+				                if(clientSockets.size()==numplayers)
+				                {
+				                	System.out.println("Before sending spawn");
+				                	Mazewar.sendSpawn(Mazewar.getSequenceNumber());
+				                	System.out.println("Sent spawn");
+				                }
     						}
     						else
     						{
@@ -635,9 +630,9 @@ Mazewar.printLn("Created and displayed maze");
             pts.setPlayerID(clientID);
             
             ObjectOutputStream out = null;
-            for(MazewarClientHandlerThread entry : clientSockets)
+            for(String key : clientSockets.keySet())
             {
-            	out=entry.toPlayer;
+            	out=clientSockets.get(key).toPlayer;
             	out.writeObject(pts);
             }
         }
@@ -672,9 +667,9 @@ Mazewar.printLn("Created and displayed maze");
             pts.setPlayerID(clientID);
             
             ObjectOutputStream out = null;
-            for(MazewarClientHandlerThread entry : clientSockets)
+            for(String key : clientSockets.keySet())
             {
-            	out=entry.toPlayer;
+            	out=clientSockets.get(key).toPlayer;
             	out.writeObject(pts);
             }
         }
@@ -693,9 +688,9 @@ Mazewar.printLn("Created and displayed maze");
             pts.setPlayerID(clientID);
             
             ObjectOutputStream out = null;
-            for(MazewarClientHandlerThread entry : clientSockets)
+            for(String key : clientSockets.keySet())
             {
-            	out=entry.toPlayer;
+            	out=clientSockets.get(key).toPlayer;
             	out.writeObject(pts);
             }
         }
@@ -715,9 +710,9 @@ Mazewar.printLn("Created and displayed maze");
             pts.setPlayerID(clientID);
             
             ObjectOutputStream out = null;
-            for(MazewarClientHandlerThread entry : clientSockets)
+            for(String key : clientSockets.keySet())
             {
-            	out=entry.toPlayer;
+            	out=clientSockets.get(key).toPlayer;
             	out.writeObject(pts);
             }
         }
@@ -741,9 +736,9 @@ Mazewar.printLn("Created and displayed maze");
             pts.setPlayerName(name);
             
             ObjectOutputStream out = null;
-            for(MazewarClientHandlerThread entry : clientSockets)
+            for(String key : clientSockets.keySet())
             {
-            	out=entry.toPlayer;
+            	out=clientSockets.get(key).toPlayer;
             	out.writeObject(pts);
             }
             Mazewar.printLn("Sent respawn message for ("+dpt.getX()+","+dpt.getY()+") facing "+dpt.getDirection().toString());
@@ -764,9 +759,9 @@ Mazewar.printLn("Created and displayed maze");
             pts.setPlayerID(clientID);
             
             ObjectOutputStream out = null;
-            for(MazewarClientHandlerThread entry : clientSockets)
+            for(String key : clientSockets.keySet())
             {
-            	out=entry.toPlayer;
+            	out=clientSockets.get(key).toPlayer;
             	out.writeObject(pts);
             }
         }
@@ -784,9 +779,9 @@ Mazewar.printLn("Created and displayed maze");
             pts.setPlayerID(clientID);
             
             ObjectOutputStream out = null;
-            for(MazewarClientHandlerThread entry : clientSockets)
+            for(String key : clientSockets.keySet())
             {
-            	out=entry.toPlayer;
+            	out=clientSockets.get(key).toPlayer;
             	out.writeObject(pts);
             }
         }

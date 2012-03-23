@@ -28,11 +28,18 @@ public class MazewarClientServer extends Thread {
 	        while(true)
 	        {
 	        	MazewarClientHandlerThread temp = new MazewarClientHandlerThread(serverSocket.accept());
+	        	//System.out.println("MWCS before getting IS");
+				temp.fromplayer=new ObjectInputStream(temp.getClientSocket().getInputStream());
+	        	//System.out.println("MWCS after getting OS");
+				temp.toPlayer=new ObjectOutputStream(temp.getClientSocket().getOutputStream());	
+				//System.out.println("MWCS after getting OS");
 	        	synchronized(Mazewar.clientSockets)
 				{
-					Mazewar.clientSockets.add(temp);
-					temp.fromplayer=new ObjectInputStream(temp.getClientSocket().getInputStream());
-					temp.toPlayer=new ObjectOutputStream(temp.getClientSocket().getOutputStream());
+	        		if(Mazewar.clientSockets.containsKey(temp.getClientSocket().getInetAddress().getHostAddress())==false)
+	        		{
+	        			System.out.println("MWCS Putting from MCHT client "+temp.getClientSocket().getInetAddress().getHostAddress());
+						Mazewar.clientSockets.put(temp.getClientSocket().getInetAddress().getHostAddress(),temp);
+	        		}
 				}
 	        }
 		} catch (IOException e) {

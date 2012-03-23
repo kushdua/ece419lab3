@@ -18,6 +18,9 @@ public class MazewarClientHandlerThread extends Thread {
 	public MazewarClientHandlerThread(Socket accept) {
 		super("MazewarServerHandlerThread");
 		this.socket = accept;
+		//for (StackTraceElement ste : Thread.currentThread().getStackTrace()) {
+		//    System.out.println(ste + "\n");
+		//}
 		System.out.println("Created new Thread to handle remote server client");
 	}
 
@@ -34,9 +37,10 @@ public class MazewarClientHandlerThread extends Thread {
 					{
 						synchronized(Mazewar.clientSockets)
 						{
-							if(Mazewar.clientSockets.contains(fromclientpacket.getPlayerID())==false)
+							if(Mazewar.clientSockets.containsKey(socket.getInetAddress().getHostAddress())==false)
 							{
-								Mazewar.clientSockets.add(fromclientpacket.getPlayerID(), this);
+System.out.println("Putting from MCHT client "+socket.getInetAddress().getHostAddress());
+								Mazewar.clientSockets.put(socket.getInetAddress().getHostAddress(), this);
 								myNum=fromclientpacket.getPlayerID();
 							}
 						}
