@@ -19,7 +19,7 @@ public class MazewarClientHandlerThread extends Thread {
 		super("MazewarServerHandlerThread");
 		this.socket = accept;
 		//for (StackTraceElement ste : Thread.currentThread().getStackTrace()) {
-		//    System.out.println(ste + "\n");
+		//    Mazewar.println(ste + "\n");
 		//}
 		System.out.println("Created new Thread to handle remote server client");
 	}
@@ -39,12 +39,13 @@ public class MazewarClientHandlerThread extends Thread {
 						{
 							if(Mazewar.clientSockets.containsKey(socket.getInetAddress().getHostAddress())==false)
 							{
-System.out.println("Putting from MCHT client "+socket.getInetAddress().getHostAddress());
-								Mazewar.clientSockets.put(socket.getInetAddress().getHostAddress(), this);
+Mazewar.printLn("Putting from MCHT client "+socket.getInetAddress().getHostAddress());
+								Mazewar.clientSockets.put(fromclientpacket.getPlayerID(), this);
 								myNum=fromclientpacket.getPlayerID();
 							}
 						}
 					}
+Mazewar.printLn("Put message of type "+fromclientpacket.getAction()+", type "+fromclientpacket.getType()+" in queue");
 					Mazewar.queue.put(fromclientpacket.getSeqNo(),fromclientpacket);
 	        	}
 			}	

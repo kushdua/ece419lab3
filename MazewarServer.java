@@ -94,16 +94,16 @@ public class MazewarServer {
 		 *  Queue i.e. in the arraylist <serverQueue> and the topmost packet needs to be broadcasted to 
 		 *  all the clients
 		 */
-        List<MazewarPacket> Queue = MazewarServerHandlerThread.serverQueue;
+        //List<MazewarPacket> Queue = MazewarServerHandlerThread.serverQueue;
         while (listening) {
-        	synchronized(Queue) {
-        		if(Queue.isEmpty()){
+        	synchronized(MazewarServerHandlerThread.serverQueue) {
+        		if(MazewarServerHandlerThread.serverQueue.isEmpty()){
         			// relaxing time ... nothing left to do
                     //System.out.println("Queue EMPTY");
         		}
         		else{
         			//System.out.println("QUEUE IS NONEMPTY");
-        			MazewarPacket toclientpacket =  (MazewarPacket) Queue.remove(topindex);
+        			MazewarPacket toclientpacket =  MazewarServerHandlerThread.serverQueue.remove(topindex);
             		//broadcasting this packet, so send it to all the clients
             		/*for(int i =0;i<waitForNumClients;i++) {
             			try

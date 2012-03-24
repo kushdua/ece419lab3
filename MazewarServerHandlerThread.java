@@ -20,7 +20,7 @@ public class MazewarServerHandlerThread extends Thread {
 		super("MazewarServerHandlerThread");
 		this.socket = accept;
 		this.IP = accept.getInetAddress().getHostAddress();
-		System.out.println("the IP address is"+this.IP);
+		System.out.println("the IP address is "+this.IP);
 		//this.IP= accept.getRemoteSocketAddress().toString();
 		System.out.println("Created new Thread to handle remote server client");
 	}
@@ -32,6 +32,7 @@ public class MazewarServerHandlerThread extends Thread {
 			ObjectInputStream fromplayer = new ObjectInputStream(socket.getInputStream());
 			MazewarPacket fromclientpacket = null;
 			while((fromclientpacket = (MazewarPacket) fromplayer.readObject())!=null){
+				System.out.println("Received packet of type "+fromclientpacket.getAction());
 				synchronized(serverQueue)
 	        	{
 					serverQueue.add(fromclientpacket);
