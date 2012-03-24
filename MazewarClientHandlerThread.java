@@ -45,7 +45,7 @@ Mazewar.printLn("Putting from MCHT client "+socket.getInetAddress().getHostAddre
 							}
 						}
 					}
-Mazewar.printLn("Put message of type "+fromclientpacket.getAction()+", type "+fromclientpacket.getType()+" in queue");
+//Mazewar.printLn("Put message of type "+fromclientpacket.getAction()+", type "+fromclientpacket.getType()+" sequence number "+fromclientpacket.getSeqNo()+" in queue when expecting "+Mazewar.prevSeq);
 					Mazewar.queue.put(fromclientpacket.getSeqNo(),fromclientpacket);
 	        	}
 			}	

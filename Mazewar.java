@@ -276,7 +276,7 @@ public class Mazewar extends JFrame {
     					}
     					else if(packet.getAction()==MazewarPacket.ACTION_START)
     					{
-Mazewar.printLn("Got action_start message");
+//Mazewar.printLn("Got action_start message");
     						//TODO: Create connections to other clients based on packet contents from START message
     						synchronized(clientSockets)
     						{
@@ -288,7 +288,7 @@ Mazewar.printLn("Got action_start message");
     						        int id=(Integer) pairs.getKey();
     						        NetworkAddress value=(NetworkAddress) pairs.getValue();
     						        //Add even localhost (GUI) client, so event application code doesn't have to be repeated
-    						        Mazewar.printLn("MW Trying to connect to client "+id+" at "+value.address+":"+Mazewar.GAME_PORT);
+Mazewar.printLn("MW Trying to connect to client "+id+" at "+value.address+":"+Mazewar.GAME_PORT);
 						        	MazewarClientHandlerThread temp = new MazewarClientHandlerThread(new Socket(value.address, Mazewar.GAME_PORT+id));
     						        if(clientSockets.containsKey(value.address)==false)
     						        {
@@ -324,12 +324,18 @@ Mazewar.printLn("Got action_start message");
 				                assert(scoreModel != null);
 				                maze.addMazeListener(scoreModel);
 				                
-				                if(clientSockets.size()==numplayers)
+				                while(clientSockets.size()!=numplayers)
 				                {
-				                	Mazewar.printLn("Before sending spawn");
-				                	Mazewar.sendSpawn(Mazewar.getSequenceNumber());
-				                	Mazewar.printLn("Sent spawn");
+				                	try {
+										Thread.sleep(0,1000);
+									} catch (InterruptedException e) {
+										// TODO Auto-generated catch block
+										e.printStackTrace();
+									}
 				                }
+//Mazewar.printLn("Before sending spawn");
+			                	Mazewar.sendSpawn(Mazewar.getSequenceNumber());
+//Mazewar.printLn("Sent spawn");
 				                break;
     						}
     						else
@@ -492,7 +498,7 @@ Mazewar.printLn("Got action_start message");
 					//Listen for events and perform appropriate GUI update action... self-explanatory
     				while(true)
     				{
-    					if(queue.isEmpty())
+    					while(queue.isEmpty())
     					{
     						try {
 								Thread.sleep(0,1000);
@@ -503,6 +509,7 @@ Mazewar.printLn("Got action_start message");
     					
     					if(queue.isEmpty() || queue.containsKey(prevSeq+1)==false)
     					{
+//Mazewar.printLn("Thought queue was nonempty but couldn't find "+(prevSeq+1)+"key.");
     						continue;
     					}
     					else
@@ -510,12 +517,13 @@ Mazewar.printLn("Got action_start message");
     						//Process events from queue
         					synchronized(queue)
         					{
+//Mazewar.printLn("Removed key "+(prevSeq)+" from queue");
         						packet=queue.remove(++prevSeq);
         					}
     					}
 					
 						//If packet is not next expected, queue it until you receive this next one.
-						if(packet.getSeqNo()!=prevSeq+1)
+						if(packet.getSeqNo()!=prevSeq)
 						{
 							synchronized(queue)
 							{
@@ -688,7 +696,12 @@ Mazewar.printLn("Got action_start message");
             
             pts.setPlayerID(clientID);
             
-            pout.writeObject(pts);
+            ObjectOutputStream out = null;
+            for(int key : clientSockets.keySet())
+            {
+            	out=clientSockets.get(key).toPlayer;
+            	out.writeObject(pts);
+            }
         }
         
         /**
@@ -776,7 +789,7 @@ Mazewar.printLn("Got action_start message");
             ObjectOutputStream out = null;
             for(int key : clientSockets.keySet())
             {
-Mazewar.printLn("Before sending spawn for client ID "+key+" inside sendSpawn");
+//Mazewar.printLn("Before sending spawn for client ID "+key+" inside sendSpawn");
             	out=clientSockets.get(key).toPlayer;
             	out.writeObject(pts);
             }
@@ -837,7 +850,7 @@ Mazewar.printLn("Before sending spawn for client ID "+key+" inside sendSpawn");
         	
 			while(true)
 			{
-Mazewar.printLn("Before waiting to read given sequence number");
+//Mazewar.printLn("Before waiting to read given sequence number");
 				packet=(MazewarPacket)(pin.readObject());
 				if(packet==null)
 					continue;
@@ -845,7 +858,7 @@ Mazewar.printLn("Before waiting to read given sequence number");
 				//If packet is not next expected, queue it until you receive this next one.
 				if(packet.getAction()==MazewarPacket.ACTION_REQ_SEQ)
 				{
-Mazewar.printLn("Received assigned seqNo of "+packet.getSeqNo());
+//Mazewar.printLn("Received assigned seqNo of "+packet.getSeqNo());
 					return packet.getSeqNo();
 				}
 			}

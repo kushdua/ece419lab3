@@ -33,6 +33,7 @@ public class MazewarClientServer extends Thread {
 	        	//System.out.println("MWCS after getting OS");
 				temp.toPlayer=new ObjectOutputStream(temp.getClientSocket().getOutputStream());	
 				//System.out.println("MWCS after getting OS");
+				temp.start();
 	        }
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
