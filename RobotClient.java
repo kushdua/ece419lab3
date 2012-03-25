@@ -47,6 +47,8 @@ public class RobotClient extends LocalClient implements Runnable {
          * running.
          */
         private boolean active = false;
+        
+        private RobotClient myself=null;
    
         /**
          * Create a computer controlled {@link LocalClient}.
@@ -55,6 +57,7 @@ public class RobotClient extends LocalClient implements Runnable {
         public RobotClient(String name) {
                 super(name);
                 assert(name != null);
+                myself=this;
                 // Create our thread
                 thread = new Thread(this);
         }
@@ -100,7 +103,7 @@ public class RobotClient extends LocalClient implements Runnable {
                 while(active) {
                         // Try to move forward
                         //if(!forward()) {
-                		if(maze.canMoveForward(this)==false) {
+                		if(maze.canMoveForward(myself)==false) {
                                 // If we fail...
                                 if(randomGen.nextInt(3) == 1) {
                                     // turn left!

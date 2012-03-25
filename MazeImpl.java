@@ -594,7 +594,7 @@ public class MazeImpl extends Maze implements Serializable, ClientListener, Runn
                 cell.setContents(target);
                 clientMap.put(target, new DirectedPoint(point, d));
                 */
-                if(target instanceof GUIClient)
+                if(target instanceof GUIClient || target instanceof RobotClient)
                 {
                 	try {
 						Mazewar.sendSpawn(Mazewar.getSequenceNumber());
@@ -1060,21 +1060,48 @@ public class MazeImpl extends Maze implements Serializable, ClientListener, Runn
 		public boolean canMoveForward(Client client) {
 			assert(client!=null);
 			if(client==null)
+			{
+//Mazewar.printLn("cmf: Client is null");				
 				return false;
+			}
+			
 			Object o = clientMap.get(client);
-			if(o==null) return false;
+			if(o==null)
+			{
+//Mazewar.printLn("cmf: Object for client location is null");	
+			return false;
+			}
+			
 			DirectedPoint dp = null;
-			if(o instanceof DirectedPoint) dp = (DirectedPoint)o;
-			if(getCellImpl(getClientPoint(client)).isWall(dp.getDirection()))
+			if(o instanceof DirectedPoint)
+			{
+				dp = (DirectedPoint)o;
+			}
+			else
+			{
+//Mazewar.printLn("cmf: Object is not of class DirectedPoint");	
 				return false;
+			}
+			
+			if(getCellImpl(getClientPoint(client)).isWall(dp.getDirection()))
+			{
+//Mazewar.printLn("cmf: Client is facing a wall");
+				return false;
+			}
 
-			DirectedPoint newPoint=new DirectedPoint(getClientPoint(client), getClientOrientation(client));
+			DirectedPoint newPoint=new DirectedPoint(getClientPoint(client).move(dp.getDirection()), dp.getDirection());
 			
 			if(checkBounds(newPoint)==false)
+			{
+//Mazewar.printLn("cmf: New point is out of bounds");	
 				return false;
+			}
 			
-			if(getCellImpl(newPoint)!=null)
+			if(getCellImpl(newPoint).getContents()!=null)
+			{
+//Mazewar.printLn("cmf: Client at ("+dp.getX()+","+dp.getY()+") cannot move to ("+newPoint.getX()+","+newPoint.getY()+") as it is occupied");	
 				return false;
+			}
 			return true;
 		}
 }

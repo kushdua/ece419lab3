@@ -407,7 +407,7 @@ Mazewar.printLn("MW Trying to connect to client "+id+" at "+value.address+":"+Ma
 									else
 									{
 								        //Create the GUIClient and save it in our local clients list
-								        gameClient = new GUIClient(packet.getPlayerName());
+								        gameClient = new RobotClient(packet.getPlayerName());
 								        clients.put(clientID, gameClient);
 								        
 								        if(maze.addClient(gameClient, 
@@ -596,7 +596,7 @@ Mazewar.printLn("MW Trying to connect to client "+id+" at "+value.address+":"+Ma
 	    						}
 	    						else if(packet.getType()==MazewarPacket.TYPE_MOVE_PROJECTILE)
 	    						{
-	    							Mazewar.printLn("Recevied MOVE_PROJECTILE for client "+packet.getPlayerID());
+	    							Mazewar.printLn("Received MOVE_PROJECTILE for client "+packet.getPlayerID());
 	    							//Run the timer loop code only once for the client's (from packet) projectile
 	    							// => move/remove projectile + kill, w.e.
 	    							Collection deadPrj = new HashSet();
