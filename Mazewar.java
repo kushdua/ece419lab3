@@ -85,7 +85,7 @@ public class Mazewar extends JFrame {
         /**
          * The {@link GUIClient} for the game.
          */
-        private GUIClient guiClient = null;
+        private Client gameClient = null;
         
         /**
          * ID for this client (as returned from server)
@@ -210,17 +210,21 @@ public class Mazewar extends JFrame {
         public Mazewar(String args[]) {
 
         		super("ECE419 Mazewar");
-
+        		boolean isGUI=false;
         		//Populate from CL args
-	    		if(args.length!=2)
+	    		if(args.length!=3)
 	    		{
-	    			System.out.println("Usage: java Mazewar <server address> <server port>");
+	    			System.out.println("Usage: java Mazewar <server address> <server port> <0 for GUI client, 1 for RobotClient instantiation>");
 	    			System.exit(-1);
 	    		}
 	    		else
 	    		{
 	    			serverAddress=args[0];
 	    			serverPort=Integer.parseInt(args[1]);
+	    			if(Integer.parseInt(args[2])==0)
+	    			{
+	    				isGUI=true;
+	    			}
 	    		}
                 
                 // Throw up a dialog to get the GUIClient name.
@@ -382,21 +386,41 @@ Mazewar.printLn("MW Trying to connect to client "+id+" at "+value.address+":"+Ma
 								Mazewar.printLn("Received spawn for client "+packet.getPlayerID());
 								if(clientID==packet.getPlayerID())
 								{
-							        //Create the GUIClient and save it in our local clients list
-							        guiClient = new GUIClient(packet.getPlayerName());
-							        clients.put(clientID, guiClient);
-							        
-							        if(maze.addClient(guiClient, 
-							        			new Point(packet.getXpos(), packet.getYpos()), packet.getDir())==false)
-							        {
-							        	//Respawn because we couldn't add ourselves at this point...
-							        	//someone/something else is here now
-							        	sendSpawn(getSequenceNumber());
-							            continue;
-							        }
-							        //Mazewar.printLn("Player "+packet.getPlayerID()+" added at ("+packet.getXpos()+","+packet.getYpos()+") facing "+packet.getDir());
-							        this.addKeyListener(guiClient);
-							        playersJoined++;
+									if(isGUI)
+									{
+								        //Create the GUIClient and save it in our local clients list
+								        gameClient = new GUIClient(packet.getPlayerName());
+								        clients.put(clientID, gameClient);
+								        
+								        if(maze.addClient(gameClient, 
+								        			new Point(packet.getXpos(), packet.getYpos()), packet.getDir())==false)
+								        {
+								        	//Respawn because we couldn't add ourselves at this point...
+								        	//someone/something else is here now
+								        	sendSpawn(getSequenceNumber());
+								            continue;
+								        }
+								        //Mazewar.printLn("Player "+packet.getPlayerID()+" added at ("+packet.getXpos()+","+packet.getYpos()+") facing "+packet.getDir());
+								        this.addKeyListener((GUIClient)gameClient);
+								        playersJoined++;
+									}
+									else
+									{
+								        //Create the GUIClient and save it in our local clients list
+								        gameClient = new GUIClient(packet.getPlayerName());
+								        clients.put(clientID, gameClient);
+								        
+								        if(maze.addClient(gameClient, 
+								        			new Point(packet.getXpos(), packet.getYpos()), packet.getDir())==false)
+								        {
+								        	//Respawn because we couldn't add ourselves at this point...
+								        	//someone/something else is here now
+								        	sendSpawn(getSequenceNumber());
+								            continue;
+								        }
+								        //Mazewar.printLn("Player "+packet.getPlayerID()+" added at ("+packet.getXpos()+","+packet.getYpos()+") facing "+packet.getDir());
+								        playersJoined++;
+									}
 								}
 								else
 								{
@@ -416,7 +440,7 @@ Mazewar.printLn("MW Trying to connect to client "+id+" at "+value.address+":"+Ma
 									//Debug messages for weird, randomly occurring bug (which might have been fixed) where visual maze doesn't appear
 									Mazewar.printLn("1");
 									                    // Create the panel that will display the maze.
-									                    overheadPanel = new OverheadMazePanel(maze, guiClient);
+									                    overheadPanel = new OverheadMazePanel(maze, gameClient);
 									                    assert(overheadPanel != null);
 									                    maze.addMazeListener(overheadPanel);
 							
@@ -635,6 +659,7 @@ Mazewar.printLn("MW Trying to connect to client "+id+" at "+value.address+":"+Ma
 	    						}
 	    						else
 	    						{
+	    				        	maze.removePlayerProjectilesOnQuit(clients.get(packet.getPlayerID()));
 	    							maze.removeClient(clients.get(packet.getPlayerID()));
 	    						}
 	    					}
@@ -651,8 +676,7 @@ Mazewar.printLn("MW Trying to connect to client "+id+" at "+value.address+":"+Ma
 
         }
 
-        
-        /**
+		/**
          * Entry point for the game.  
          * @param args Command-line arguments.
          */

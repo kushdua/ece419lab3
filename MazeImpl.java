@@ -235,6 +235,37 @@ public class MazeImpl extends Maze implements Serializable, ClientListener, Runn
                 update();
                 notifyClientRemove(client);
         }
+        
+        public synchronized void removePlayerProjectilesOnQuit(Client client)
+        {
+            assert(client != null);
+            if(client==null)
+            	return;
+            
+            if(clientFired.contains(client))
+            {
+                Iterator it = projectileMap.keySet().iterator();
+                synchronized(projectileMap) {
+                        while(it.hasNext()) {
+                            Object o = it.next();
+                            //Mazewar.printLn("Projectile owner = "+((Projectile)o).getOwner()+" and packet client = "+clients.get(packet.getPlayerID()));
+                            if(o instanceof Projectile)
+                            {
+                            	DirectedPoint dp = (DirectedPoint) projectileMap.remove((Projectile)o);
+                            	if(dp!=null)
+                            	{
+	                            	CellImpl newCell = getCellImpl(dp);
+	                            	if(newCell!=null)
+	                            	{
+		                            	newCell.setContents(null);
+		                                clientFired.remove(client);
+	                            	}
+                            	}
+                            }
+                        }
+                }
+            }
+        }
 
         public synchronized boolean clientFire(Client client) {
                 assert(client != null);
@@ -1024,4 +1055,26 @@ public class MazeImpl extends Maze implements Serializable, ClientListener, Runn
                 assert(o2 instanceof CellImpl);
                 return (CellImpl)o2;
         }
+
+		@Override
+		public boolean canMoveForward(Client client) {
+			assert(client!=null);
+			if(client==null)
+				return false;
+			Object o = clientMap.get(client);
+			if(o==null) return false;
+			DirectedPoint dp = null;
+			if(o instanceof DirectedPoint) dp = (DirectedPoint)o;
+			if(getCellImpl(getClientPoint(client)).isWall(dp.getDirection()))
+				return false;
+
+			DirectedPoint newPoint=new DirectedPoint(getClientPoint(client), getClientOrientation(client));
+			
+			if(checkBounds(newPoint)==false)
+				return false;
+			
+			if(getCellImpl(newPoint)!=null)
+				return false;
+			return true;
+		}
 }

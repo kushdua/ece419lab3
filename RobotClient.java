@@ -19,6 +19,7 @@ USA.
  
 import java.util.Random;
 import java.util.Vector;
+import java.io.IOException;
 import java.lang.Runnable;
 
 /**
@@ -98,20 +99,57 @@ public class RobotClient extends LocalClient implements Runnable {
                 // Loop while we are active
                 while(active) {
                         // Try to move forward
-                        if(!forward()) {
+                        //if(!forward()) {
+                		if(maze.canMoveForward(this)==false) {
                                 // If we fail...
                                 if(randomGen.nextInt(3) == 1) {
-                                        // turn left!
-                                        turnLeft();
+                                    // turn left!
+                            		try {
+            							Mazewar.sendMoveLeft(Mazewar.getSequenceNumber());
+            						} catch (IOException e1) {
+            							// TODO Auto-generated catch block
+            							e1.printStackTrace();
+            						}
+                            		catch (ClassNotFoundException e2){
+                            			e2.printStackTrace();
+                            		}
                                 } else {
-                                        // or perhaps turn right!
-                                        turnRight();
+                                    // or perhaps turn right!
+                            		try {
+            							Mazewar.sendMoveRight(Mazewar.getSequenceNumber());
+            						} catch (IOException e1) {
+            							// TODO Auto-generated catch block
+            							e1.printStackTrace();
+            						}
+                            		catch (ClassNotFoundException e2){
+                            			e2.printStackTrace();
+                            		}
                                 }
                         }
+                		else
+                		{
+                    		try {
+    							Mazewar.sendMoveForward(Mazewar.getSequenceNumber());
+    						} catch (IOException e1) {
+    							// TODO Auto-generated catch block
+    							e1.printStackTrace();
+    						}
+                    		catch (ClassNotFoundException e2){
+                    			e2.printStackTrace();
+                    		}
+                		}
 
                         // Shoot at things once and a while.
                         if(randomGen.nextInt(10) == 1) {
-                                fire();
+                    		try {
+    							Mazewar.sendFire(Mazewar.getSequenceNumber());
+    						} catch (IOException e1) {
+    							// TODO Auto-generated catch block
+    							e1.printStackTrace();
+    						}
+                    		catch (ClassNotFoundException e2){
+                    			e2.printStackTrace();
+                    		}
                         }
                         
                         // Sleep so the humans can possibly compete.
