@@ -27,6 +27,7 @@ import java.awt.GridBagLayout;
 import java.awt.GridBagConstraints;
 import javax.swing.BorderFactory;
 
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -80,7 +81,7 @@ public class Mazewar extends JFrame {
         /**
          * The {@link Maze} that the game uses.
          */
-        private static Maze maze = null;
+        static Maze maze = null;
 
         /**
          * The {@link GUIClient} for the game.
@@ -117,12 +118,12 @@ public class Mazewar extends JFrame {
         /**
          * Server address command line parameter
          */
-        private String serverAddress="";
+        private static String serverAddress="";
         
         /**
          * Server port command line parameter
          */
-        private int serverPort=0;
+        private static int serverPort=0;
         
         /**
          * Game port (same on all players)
@@ -132,7 +133,7 @@ public class Mazewar extends JFrame {
         /**
          * Client socket for communication with server
          */
-        private Socket clientSocket=null;
+        private static Socket clientSocket=null;
         
         /**
          * Output stream for sending to server
@@ -862,30 +863,118 @@ Mazewar.printLn("MW Trying to connect to client "+id+" at "+value.address+":"+Ma
             }
         }
         
-        public static int getSequenceNumber() throws IOException, ClassNotFoundException
+        public static int getSequenceNumber()
         {
         	MazewarPacket pts = new MazewarPacket();
         	pts.setAction(MazewarPacket.ACTION_REQ_SEQ);
         	
         	pts.setPlayerID(clientID);
-        	pout.writeObject(pts);
-        	
-        	MazewarPacket packet = null;
-        	
-			while(true)
-			{
-//Mazewar.printLn("Before waiting to read given sequence number");
-				packet=(MazewarPacket)(pin.readObject());
-				if(packet==null)
-					continue;
+        	try {
+				pout.writeObject(pts);
+	        	MazewarPacket packet = null;
 				
-				//If packet is not next expected, queue it until you receive this next one.
-				if(packet.getAction()==MazewarPacket.ACTION_REQ_SEQ)
+				while(true)
 				{
-//Mazewar.printLn("Received assigned seqNo of "+packet.getSeqNo());
-					return packet.getSeqNo();
+	Mazewar.printLn("Before waiting to read given sequence number");
+					packet=(MazewarPacket)(pin.readObject());
+					
+					if(packet==null)
+						continue;
+					
+					//If packet is not next expected, queue it until you receive this next one.
+					if(packet.getAction()==MazewarPacket.ACTION_REQ_SEQ)
+					{
+	Mazewar.printLn("Received assigned seqNo of "+packet.getSeqNo());
+						return packet.getSeqNo();
+					}
 				}
-			}
+    		} catch (SocketException e) {
+				while(true)
+				{
+	    			//Open connection and save In/Out stream objects for future communication
+					try {
+						clientSocket = new Socket(serverAddress, serverPort);
+					} catch (UnknownHostException e1) {
+						// TODO Auto-generated catch block
+						continue;
+					} catch (IOException e1) {
+						// TODO Auto-generated catch block
+						continue;
+					}
+		
+					try {
+						pout = new ObjectOutputStream(clientSocket.getOutputStream());
+						
+						//Resend SEQ_REQ packet
+						pout.writeObject(pts);
+						
+						pin = new ObjectInputStream(clientSocket.getInputStream());
+						
+						MazewarPacket packet=null;
+						
+						//Try to reconnect + obtain sequence number
+						while((packet=(MazewarPacket)(pin.readObject()))!=null)
+						{
+							if(packet.getAction()==MazewarPacket.ACTION_REQ_SEQ)
+							{
+								return packet.getSeqNo();
+							}
+						}
+					} catch (IOException e8) {
+						// Couldn't set up pin/pout
+						e8.printStackTrace();
+					} catch (ClassNotFoundException e9) {
+						// Couldn't read from pin... try again
+						e9.printStackTrace();
+					}
+				}
+    		} catch (EOFException e4) {
+				while(true)
+				{
+	    			//Open connection and save In/Out stream objects for future communication
+					try {
+						clientSocket = new Socket(serverAddress, serverPort);
+					} catch (UnknownHostException e1) {
+						// TODO Auto-generated catch block
+						continue;
+					} catch (IOException e1) {
+						// TODO Auto-generated catch block
+						continue;
+					}
+		
+					try {
+						pout = new ObjectOutputStream(clientSocket.getOutputStream());
+						pin = new ObjectInputStream(clientSocket.getInputStream());
+									
+						MazewarPacket packet=null;
+					
+						//Resend SEQ_REQ packet
+						pout.writeObject(pts);
+						
+						//Try to reconnect + obtain sequence number
+						while((packet=(MazewarPacket)(pin.readObject()))!=null)
+						{
+							if(packet.getAction()==MazewarPacket.ACTION_REQ_SEQ)
+							{
+								return packet.getSeqNo();
+							}
+						}
+					} catch (IOException e8) {
+						// Couldn't set up pin/pout
+						e8.printStackTrace();
+					} catch (ClassNotFoundException e9) {
+						// Couldn't read from pin... try again
+						e9.printStackTrace();
+					}
+				}
+    		} catch (IOException e5) {
+    			// TODO Auto-generated catch block
+    			e5.printStackTrace();
+    		} catch (ClassNotFoundException e6) {
+    			// TODO Auto-generated catch block
+    			e6.printStackTrace();
+    		}
+	        return -1;
         }
         
         /**

@@ -12,14 +12,22 @@ import java.util.List;
 public class MazewarServerHandlerThread extends Thread {
 	private Socket socket = null;
 	private String IP = null;
+	private int myID=-1;
 	
 	//Global list of events received at the server
 	public static final List<MazewarPacket> serverQueue=Collections.synchronizedList(new ArrayList<MazewarPacket>());
+	
+	public ObjectInputStream fromplayer=null;
 
 	public MazewarServerHandlerThread(Socket accept) {
 		super("MazewarServerHandlerThread");
 		this.socket = accept;
 		this.IP = accept.getInetAddress().getHostAddress();
+		try {
+			fromplayer = new ObjectInputStream(socket.getInputStream());
+		} catch (IOException e) {
+			System.err.println("Could not retrieve OIS for client connected to sequencer.");
+		}
 		System.out.println("the IP address is "+this.IP);
 		//this.IP= accept.getRemoteSocketAddress().toString();
 		System.out.println("Created new Thread to handle remote server client");
@@ -29,10 +37,10 @@ public class MazewarServerHandlerThread extends Thread {
 		//Handle incoming packet and add it to queue of events to process
 		//Mazewar server would send that packet
         try {
-			ObjectInputStream fromplayer = new ObjectInputStream(socket.getInputStream());
+        	//fromplayer = new ObjectInputStream(socket.getInputStream());
 			MazewarPacket fromclientpacket = null;
 			while((fromclientpacket = (MazewarPacket) fromplayer.readObject())!=null){
-				System.out.println("Received packet of type "+fromclientpacket.getAction());
+				//System.out.println("Received packet of type "+fromclientpacket.getAction());
 				synchronized(serverQueue)
 	        	{
 					serverQueue.add(fromclientpacket);

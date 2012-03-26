@@ -52,10 +52,6 @@ public class GUIClient extends LocalClient implements KeyListener {
 							// TODO Auto-generated catch block
 							e1.printStackTrace();
 						}
-                		catch (ClassNotFoundException e2){
-                			e2.printStackTrace();
-                		}
-                // Up-arrow moves forward.
                 } else if(e.getKeyCode() == KeyEvent.VK_UP) {
                 		//Send packet with move forward maybe just put it here.. then call forward when you recv in MW
                         //forward();
@@ -65,10 +61,6 @@ public class GUIClient extends LocalClient implements KeyListener {
 							// TODO Auto-generated catch block
 							e1.printStackTrace();
 						}
-                		catch (ClassNotFoundException e2){
-                			e2.printStackTrace();
-                		}
-                // Down-arrow moves backward.
                 } else if(e.getKeyCode() == KeyEvent.VK_DOWN) {
                         //backup();
                 		try {
@@ -77,10 +69,6 @@ public class GUIClient extends LocalClient implements KeyListener {
 							// TODO Auto-generated catch block
 							e1.printStackTrace();
 						}
-                		catch (ClassNotFoundException e2){
-                			e2.printStackTrace();
-                		}
-                // Left-arrow turns left.
                 } else if(e.getKeyCode() == KeyEvent.VK_LEFT) {
                         //turnLeft();
                 		try {
@@ -89,10 +77,6 @@ public class GUIClient extends LocalClient implements KeyListener {
 							// TODO Auto-generated catch block
 							e1.printStackTrace();
 						}
-                		catch (ClassNotFoundException e2){
-                			e2.printStackTrace();
-                		}
-                // Right-arrow turns right.
                 } else if(e.getKeyCode() == KeyEvent.VK_RIGHT) {
                         //turnRight();
                 		try {
@@ -101,10 +85,6 @@ public class GUIClient extends LocalClient implements KeyListener {
 							// TODO Auto-generated catch block
 							e1.printStackTrace();
 						}
-                		catch (ClassNotFoundException e2){
-                			e2.printStackTrace();
-                		}
-                // Spacebar fires.
                 } else if(e.getKeyCode() == KeyEvent.VK_SPACE) {
                         //fire();
                 		try {
@@ -113,9 +93,6 @@ public class GUIClient extends LocalClient implements KeyListener {
 							// TODO Auto-generated catch block
 							e1.printStackTrace();
 						}
-                		catch (ClassNotFoundException e2){
-                			e2.printStackTrace();
-                		}
                 }
         }
         

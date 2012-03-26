@@ -4,20 +4,24 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.io.*;
 
 public class MazewarServer {
 	
 	//Global list of events received at the server
-	private static final List<MazewarServerHandlerThread> clients=Collections.synchronizedList(new ArrayList<MazewarServerHandlerThread>());
+	//private static final List<MazewarServerHandlerThread> clients=Collections.synchronizedList(new ArrayList<MazewarServerHandlerThread>());
+	public static final Map<Integer,MazewarServerHandlerThread> clients=Collections.synchronizedMap(new HashMap<Integer, MazewarServerHandlerThread>());
     //private static List<Socket> clientSockets = new LinkedList<Socket>();
-    private int seeds=42;
+    static int seeds=42;
     private final int topindex = 0;
-    private int seqno;
+    static int seqno;
+    static int waitForNumClients=4;
 	//keeps tracks of number of clients currently joined the game
-	private int currClient=0;
-	HashMap<Integer,NetworkAddress> Player= new HashMap<Integer, NetworkAddress>();
-	
+	static int currClient=0;
+	static HashMap<Integer,NetworkAddress> Player= new HashMap<Integer, NetworkAddress>();
+
+    static ObjectOutputStream[] toplayer  = new ObjectOutputStream[waitForNumClients];
 	
     public static void main(String[] args) throws IOException {
     	new MazewarServer(args);
@@ -27,67 +31,112 @@ public class MazewarServer {
     {
         ServerSocket serverSocket = null;
         boolean listening = true;
-        int waitForNumClients=4;
         seeds= (int) Math.random();
+        boolean recover=false;
         try {
-        	if(args.length == 2 || args.length == 1) {
+        	if(args.length <= 3) {
 				//Create server socket to listen for client connection requests
         		serverSocket = new ServerSocket(Integer.parseInt(args[0]));
         		//Second optional argument is number of clients to wait for until starting the game (default 4)
         		if(args.length==2)
+        		{
+        			if(args[1].compareToIgnoreCase("-recover")!=0)
+        				waitForNumClients=Integer.parseInt(args[1]);
+        			else
+        				recover=true;
+        		}
+        		else
+        		{
+        			recover=true;
         			waitForNumClients=Integer.parseInt(args[1]);
+        		}
+        			
         	} else {
-        		System.err.println("ERROR: Invalid arguments!");
+        		System.err.println("ERROR: Invalid arguments! Usage java MazewarServer <port> [number of clients] [-recover]");
         		System.exit(-1);
         	}
         } catch (IOException e) {
-            System.err.println("ERROR: Could not listen on port!");
+            System.err.println("ERROR: Could not listen on port "+args[0]+"!");
             System.exit(-1);
         }
 
+        if(recover)
+        {
+    		File fin = new File("server.dat"); 
+    		FileReader fis = new FileReader(fin);  
+    		BufferedReader bis = new BufferedReader(fis);
+    		String line = bis.readLine();
+    		if(line!=null && line !="")
+    		{
+    			seeds=Integer.parseInt(line.trim());
+    		}
+    		
+    		line=bis.readLine();
+    		if(line!=null && line !="")
+    		{
+    			waitForNumClients=Integer.parseInt(line.trim());
+    		}
+    		
+    		line=bis.readLine();
+    		if(line!=null && line !="")
+    		{
+    			seqno=Integer.parseInt(line.trim());
+    		}
+    		
+    		bis.close();
+        }
         
-        ObjectOutputStream[] toplayer  = new ObjectOutputStream[waitForNumClients];
-        while (currClient!=waitForNumClients) {
-        	synchronized(clients)
-        	{
-				//Continuously listen for and accept client connection requests
-	        	clients.add(currClient++,new MazewarServerHandlerThread(serverSocket.accept()));
-	        	clients.get(currClient-1).start();
-        		MazewarPacket toclientpacket = new MazewarPacket();
-        		toclientpacket.setAction(MazewarPacket.ACTION_JOIN);
-        		toclientpacket.setSeed(seeds);
-        		toclientpacket.setPlayerID(currClient-1);
-        		toclientpacket.setMaxplayer(waitForNumClients);
-        		// grap the ip address
-        		String ip;
-        		ip = clients.get(currClient-1).getClientIP();
-        		NetworkAddress net1 = new NetworkAddress(ip,0);
-        		Player.put(currClient-1, net1);
-        		//toclientpacket.setPlayers(currClient-1,net1);
-	        	//initialize and get ready for game to begin soon
-	        	toplayer[currClient-1] = new ObjectOutputStream(clients.get(currClient-1).getClientSocket().getOutputStream());
-	        	//toplayer[currClient-1] = new ObjectOutputStream(clients.get(currClient-1).getClientIP();
-	        	toplayer[currClient-1].writeObject(toclientpacket);
-	        	
-        	}
-        }//Exit accepting connections
+        if(!recover)
+        {
+	        while (currClient!=waitForNumClients) {
+	        	synchronized(clients)
+	        	{
+					//Continuously listen for and accept client connection requests
+		        	clients.put(currClient++,new MazewarServerHandlerThread(serverSocket.accept()));
+		        	clients.get(currClient-1).start();
+	        		MazewarPacket toclientpacket = new MazewarPacket();
+	        		toclientpacket.setAction(MazewarPacket.ACTION_JOIN);
+	        		toclientpacket.setSeed(seeds);
+	        		toclientpacket.setPlayerID(currClient-1);
+	        		toclientpacket.setMaxplayer(waitForNumClients);
+	        		// grap the ip address
+	        		String ip;
+	        		ip = clients.get(currClient-1).getClientIP();
+	        		NetworkAddress net1 = new NetworkAddress(ip,0);
+	        		Player.put(currClient-1, net1);
+	        		//toclientpacket.setPlayers(currClient-1,net1);
+		        	//initialize and get ready for game to begin soon
+		        	toplayer[currClient-1] = new ObjectOutputStream(clients.get(currClient-1).getClientSocket().getOutputStream());
+		        	//toplayer[currClient-1] = new ObjectOutputStream(clients.get(currClient-1).getClientIP();
+		        	toplayer[currClient-1].writeObject(toclientpacket);
+	        	}
+	        }
+        }
+	    else
+        {
+        	MazewarServerRecoverThread temp = new MazewarServerRecoverThread(serverSocket);
+        	temp.start();
+        }
+
         
         /*
          * At this point of time all the clients have received the seed number and are ready to START the game
          * the for loop command all the clients to START
          */
-        for(int i =0;i<waitForNumClients;i++) {
-        	MazewarPacket toclientpacket = new MazewarPacket();
-    		toclientpacket.setAction(MazewarPacket.ACTION_START);
-    		toclientpacket.setPlayerID(i);
-    		toclientpacket.setPlayers(Player);
-    		/*
-    		 * Need to send network ip address queue to all the clients
-    		 * that contains ip information of all the clients connected so far  
-    		 */
-        	toplayer[i].writeObject(toclientpacket);
+        if(!recover)
+        {
+	        for(int i =0;i<waitForNumClients;i++) {
+	        	MazewarPacket toclientpacket = new MazewarPacket();
+	    		toclientpacket.setAction(MazewarPacket.ACTION_START);
+	    		toclientpacket.setPlayerID(i);
+	    		toclientpacket.setPlayers(Player);
+	    		/*
+	    		 * Need to send network ip address queue to all the clients
+	    		 * that contains ip information of all the clients connected so far  
+	    		 */
+	        	toplayer[i].writeObject(toclientpacket);
+	        }
         }
-
         
 		/*
 		 *  At this point the game has started and any change made by any client has started recording in
@@ -115,9 +164,17 @@ public class MazewarServer {
             				//Client must have disconnected.. Hide the error though.
             			}
             		}*/
-        			seqno++; 
+        			seqno++;
+        			
         			toclientpacket.setSeqNo(seqno);
         			toplayer[toclientpacket.getPlayerID()].writeObject(toclientpacket);
+        			
+        			FileOutputStream fout =  new FileOutputStream("server.dat");
+        			PrintStream pout = new PrintStream (fout);
+        			pout.println(seeds);
+        			pout.println(waitForNumClients);
+        			pout.println(seqno);
+        			pout.close();
         		}	
         	}
         }

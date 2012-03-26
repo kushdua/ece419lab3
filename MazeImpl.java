@@ -403,9 +403,6 @@ public class MazeImpl extends Maze implements Serializable, ClientListener, Runn
 														// TODO Auto-generated catch block
 														e.printStackTrace();
 													}
-							                		catch (ClassNotFoundException e2){
-							                			e2.printStackTrace();
-							                		}
                                                 }
                                         }
                                         //Commented out because this is done in Mazewar upon receiving
@@ -602,9 +599,6 @@ public class MazeImpl extends Maze implements Serializable, ClientListener, Runn
 						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}
-            		catch (ClassNotFoundException e2){
-            			e2.printStackTrace();
-            		}
                 }
                 update();
                 notifyClientKilled(source, target);

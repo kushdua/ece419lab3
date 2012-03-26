@@ -113,9 +113,6 @@ public class RobotClient extends LocalClient implements Runnable {
             							// TODO Auto-generated catch block
             							e1.printStackTrace();
             						}
-                            		catch (ClassNotFoundException e2){
-                            			e2.printStackTrace();
-                            		}
                                 } else {
                                     // or perhaps turn right!
                             		try {
@@ -124,9 +121,6 @@ public class RobotClient extends LocalClient implements Runnable {
             							// TODO Auto-generated catch block
             							e1.printStackTrace();
             						}
-                            		catch (ClassNotFoundException e2){
-                            			e2.printStackTrace();
-                            		}
                                 }
                         }
                 		else
@@ -137,9 +131,6 @@ public class RobotClient extends LocalClient implements Runnable {
     							// TODO Auto-generated catch block
     							e1.printStackTrace();
     						}
-                    		catch (ClassNotFoundException e2){
-                    			e2.printStackTrace();
-                    		}
                 		}
 
                         // Shoot at things once and a while.
@@ -150,9 +141,6 @@ public class RobotClient extends LocalClient implements Runnable {
     							// TODO Auto-generated catch block
     							e1.printStackTrace();
     						}
-                    		catch (ClassNotFoundException e2){
-                    			e2.printStackTrace();
-                    		}
                         }
                         
                         // Sleep so the humans can possibly compete.

@@ -55,11 +55,45 @@ Mazewar.printLn("Putting from MCHT client "+socket.getInetAddress().getHostAddre
 			{
 				Mazewar.clientSockets.remove(myNum);
 			}
+			
+			if(myNum==Mazewar.clientID)
+			{
+				Mazewar.quit();
+			}
+			else
+			{
+				//Synchronize on maze since clients do operations on maze
+				synchronized(Mazewar.maze)
+				{
+					if(Mazewar.maze!=null && Mazewar.clients!=null && Mazewar.clients.get(myNum)!=null)
+					{
+			        	Mazewar.maze.removePlayerProjectilesOnQuit(Mazewar.clients.get(myNum));
+						Mazewar.maze.removeClient(Mazewar.clients.get(myNum));
+					}
+				}
+			}
 		} catch (EOFException e) {
 			System.err.println("EOFException generated. Game client most likely disconnected.");
 			synchronized(Mazewar.clientSockets)
 			{
 				Mazewar.clientSockets.remove(myNum);
+			}
+			
+			if(myNum==Mazewar.clientID)
+			{
+				Mazewar.quit();
+			}
+			else
+			{
+				//Synchronize on maze since clients do operations on maze
+				synchronized(Mazewar.maze)
+				{
+					if(Mazewar.maze!=null && Mazewar.clients!=null && Mazewar.clients.get(myNum)!=null)
+					{
+						Mazewar.maze.removePlayerProjectilesOnQuit(Mazewar.clients.get(myNum));
+						Mazewar.maze.removeClient(Mazewar.clients.get(myNum));
+					}
+				}
 			}
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
