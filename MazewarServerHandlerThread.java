@@ -7,7 +7,8 @@ import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 
 public class MazewarServerHandlerThread extends Thread {
 	private Socket socket = null;
@@ -22,7 +23,29 @@ public class MazewarServerHandlerThread extends Thread {
 	public MazewarServerHandlerThread(Socket accept) {
 		super("MazewarServerHandlerThread");
 		this.socket = accept;
-		this.IP = accept.getInetAddress().getHostAddress();
+
+		try
+		{
+			this.IP = accept.getInetAddress().getHostAddress();//getHostName();
+		
+			if(IP.equals("localhost") || IP.equals("127.0.0.1"))
+			{
+				this.IP=InetAddress.getLocalHost().getHostAddress();//getHostName();
+			}
+		}
+		catch(UnknownHostException uhe)
+		{
+			System.err.println("Could not find out IP of client. Terminating the connection.");
+			try
+			{
+				socket.close();
+			}
+			catch(IOException ioef)
+			{
+				System.err.println("Could not close the client connection socket while terminating because server could not obtain IP address.");
+			}
+		}
+
 		while(fromplayer==null)
 		{
 			try {
@@ -32,7 +55,6 @@ public class MazewarServerHandlerThread extends Thread {
 			}
 		}
 		Mazewar.printLn("the IP address is "+this.IP);
-		//this.IP= accept.getRemoteSocketAddress().toString();
 		Mazewar.printLn("Created new Thread to handle remote server client");
 	}
 

@@ -76,7 +76,7 @@ public class Mazewar extends JFrame {
          */
         private int mazeSeed = 42;
         
-        public final static int GAME_PORT=8192;
+        public final static int GAME_PORT=27892;
 
         /**
          * The {@link Maze} that the game uses.
@@ -293,7 +293,7 @@ public class Mazewar extends JFrame {
     						        int id=(Integer) pairs.getKey();
     						        NetworkAddress value=(NetworkAddress) pairs.getValue();
     						        //Add even localhost (GUI) client, so event application code doesn't have to be repeated
-    						        Mazewar.printLn("MW Trying to connect to client "+id+" at "+value.address+":"+Mazewar.GAME_PORT);
+    						        Mazewar.printLn("MW Trying to connect to client "+id+" at "+value.address+":"+(Mazewar.GAME_PORT+id));
 						        	MazewarClientHandlerThread temp = new MazewarClientHandlerThread(new Socket(value.address, Mazewar.GAME_PORT+id));
     						        if(clientSockets.containsKey(value.address)==false)
     						        {
