@@ -57,7 +57,7 @@ public class Mazewar extends JFrame {
 		/**
 		 * Boolean mode for whether or not to print debug messages through printLn function in Mazewar.
 		 */
-		private static boolean debugMode=false;
+		private static boolean debugMode=true;
 	
         /**
          * The default width of the {@link Maze}.
