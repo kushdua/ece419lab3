@@ -65,7 +65,17 @@ public class MazewarServer {
         if(recover)
         {
     		File fin = new File("server.dat"); 
-    		FileReader fis = new FileReader(fin);  
+    		FileReader fis = null;
+		try
+		{
+			fis = new FileReader(fin);
+		}
+		catch(FileNotFoundException fnfe)
+		{
+			System.err.println("Could not find server.dat required for recovery. Please start the server in normal mode (i.e. omit -recover switch).");
+			System.exit(-1);
+		}
+
     		BufferedReader bis = new BufferedReader(fis);
     		String line = bis.readLine();
     		try
