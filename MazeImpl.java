@@ -242,6 +242,7 @@ public class MazeImpl extends Maze implements Serializable, ClientListener, Runn
             if(client==null)
             	return;
             
+            //Remove projectile from maze structures
             if(clientFired.contains(client))
             {
                 Iterator it = projectileMap.keySet().iterator();
@@ -1052,18 +1053,21 @@ public class MazeImpl extends Maze implements Serializable, ClientListener, Runn
 
 		@Override
 		public boolean canMoveForward(Client client) {
+			//Check if client can move forward (used for RobotClients)
+			
 			assert(client!=null);
 			if(client==null)
 			{
-//Mazewar.printLn("cmf: Client is null");				
+				//Mazewar.printLn("cmf: Client is null");				
 				return false;
 			}
 			
+			//Check client is in maze
 			Object o = clientMap.get(client);
 			if(o==null)
 			{
-//Mazewar.printLn("cmf: Object for client location is null");	
-			return false;
+				//Mazewar.printLn("cmf: Object for client location is null");	
+				return false;
 			}
 			
 			DirectedPoint dp = null;
@@ -1073,27 +1077,30 @@ public class MazeImpl extends Maze implements Serializable, ClientListener, Runn
 			}
 			else
 			{
-//Mazewar.printLn("cmf: Object is not of class DirectedPoint");	
+				//Mazewar.printLn("cmf: Object is not of class DirectedPoint");	
 				return false;
 			}
 			
+			//Check no wall in forward direction of client
 			if(getCellImpl(getClientPoint(client)).isWall(dp.getDirection()))
 			{
-//Mazewar.printLn("cmf: Client is facing a wall");
+				//Mazewar.printLn("cmf: Client is facing a wall");
 				return false;
 			}
 
 			DirectedPoint newPoint=new DirectedPoint(getClientPoint(client).move(dp.getDirection()), dp.getDirection());
 			
+			//Check next cell is in bounds
 			if(checkBounds(newPoint)==false)
 			{
-//Mazewar.printLn("cmf: New point is out of bounds");	
+				//Mazewar.printLn("cmf: New point is out of bounds");	
 				return false;
 			}
 			
+			//Check forward cell is not occupied)
 			if(getCellImpl(newPoint).getContents()!=null)
 			{
-//Mazewar.printLn("cmf: Client at ("+dp.getX()+","+dp.getY()+") cannot move to ("+newPoint.getX()+","+newPoint.getY()+") as it is occupied");	
+				//Mazewar.printLn("cmf: Client at ("+dp.getX()+","+dp.getY()+") cannot move to ("+newPoint.getX()+","+newPoint.getY()+") as it is occupied");	
 				return false;
 			}
 			return true;

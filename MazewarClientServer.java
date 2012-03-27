@@ -20,6 +20,7 @@ public class MazewarClientServer extends Thread {
 	
     public void run()
     {
+    	//Listen and accept incoming connections from other players in the game
         ServerSocket serverSocket = null;
 		try {
 			//System.out.println("Client listening for other players on port "+gamePort);

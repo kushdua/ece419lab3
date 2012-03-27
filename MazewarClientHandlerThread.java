@@ -18,10 +18,6 @@ public class MazewarClientHandlerThread extends Thread {
 	public MazewarClientHandlerThread(Socket accept) {
 		super("MazewarServerHandlerThread");
 		this.socket = accept;
-		//for (StackTraceElement ste : Thread.currentThread().getStackTrace()) {
-		//    Mazewar.println(ste + "\n");
-		//}
-		//System.out.println("Created new Thread to handle remote server client");
 	}
 
 	public void run() {
@@ -32,14 +28,14 @@ public class MazewarClientHandlerThread extends Thread {
 			while((fromclientpacket = (MazewarPacket) fromplayer.readObject())!=null){
 				synchronized(Mazewar.queue)
 	        	{
-					//Add this player to list of players if we don't have them before
+					//Add this player to list of players if we don't have them from before
 					if(fromclientpacket.getType()==MazewarPacket.TYPE_SPAWN && myNum==-1)
 					{
 						synchronized(Mazewar.clientSockets)
 						{
 							if(Mazewar.clientSockets.containsKey(socket.getInetAddress().getHostAddress())==false)
 							{
-Mazewar.printLn("Putting from MCHT client "+socket.getInetAddress().getHostAddress());
+								Mazewar.printLn("Putting from MCHT client "+socket.getInetAddress().getHostAddress());
 								Mazewar.clientSockets.put(fromclientpacket.getPlayerID(), this);
 								myNum=fromclientpacket.getPlayerID();
 							}
@@ -50,6 +46,7 @@ Mazewar.printLn("Putting from MCHT client "+socket.getInetAddress().getHostAddre
 	        	}
 			}	
 		} catch (SocketException e) {
+			//Remove socket and any game objects (client from maze, projectiles, etc)
 			System.err.println("SocketException generated. Game client most likely disconnected.");
 			synchronized(Mazewar.clientSockets)
 			{
@@ -73,6 +70,7 @@ Mazewar.printLn("Putting from MCHT client "+socket.getInetAddress().getHostAddre
 				}
 			}
 		} catch (EOFException e) {
+			//Remove socket and any game objects (client from maze, projectiles, etc)
 			System.err.println("EOFException generated. Game client most likely disconnected.");
 			synchronized(Mazewar.clientSockets)
 			{

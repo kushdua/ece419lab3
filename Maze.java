@@ -138,8 +138,17 @@ public abstract class Maze {
      */
     public abstract void removeMazeListener(MazeListener ml);
 
+    /**
+     * Remove client's projectiles from play
+     * @param client	Client whose projectiles (if any) will be removed from play.
+     */
 	public abstract void removePlayerProjectilesOnQuit(Client client);
 
+	/**
+	 * Returns whether client can move forward from its current position
+	 * @param robotClient	Client to move forward
+	 * @return	True if possible, false if not being able to move forward
+	 */
 	public abstract boolean canMoveForward(Client robotClient);
     
 }

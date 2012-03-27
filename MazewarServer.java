@@ -38,6 +38,7 @@ public class MazewarServer {
 				//Create server socket to listen for client connection requests
         		serverSocket = new ServerSocket(Integer.parseInt(args[0]));
         		//Second optional argument is number of clients to wait for until starting the game (default 4)
+        		//Third optional argument is for recovery from failure
         		if(args.length==2)
         		{
         			if(args[1].compareToIgnoreCase("-recover")!=0)
@@ -60,6 +61,7 @@ public class MazewarServer {
             System.exit(-1);
         }
 
+        //Load values from recovery file if server started in recovery mode
         if(recover)
         {
     		File fin = new File("server.dat"); 
@@ -100,35 +102,42 @@ public class MazewarServer {
     		bis.close();
         }
         
+        //Start listening server for recovery from clients already in game if in recovery mode,
+        //else accept and assign player IDs up to maximum number of clients specified
         if(!recover)
         {
 	        while (currClient!=waitForNumClients) {
 	        	synchronized(clients)
 	        	{
-					//Continuously listen for and accept client connection requests
+					//Accept new player connection and start listening for packets from it
 		        	clients.put(currClient++,new MazewarServerHandlerThread(serverSocket.accept()));
 		        	clients.get(currClient-1).myID=(currClient-1);
 		        	clients.get(currClient-1).start();
+		        	
+		        	//Send JOIN message with seed, playerID and max players information included
 	        		MazewarPacket toclientpacket = new MazewarPacket();
 	        		toclientpacket.setAction(MazewarPacket.ACTION_JOIN);
 	        		toclientpacket.setSeed(seeds);
 	        		toclientpacket.setPlayerID(currClient-1);
 	        		toclientpacket.setMaxplayer(waitForNumClients);
-	        		// grap the ip address
+	        		
+	        		//Grab the ip address
 	        		String ip;
 	        		ip = clients.get(currClient-1).getClientIP();
 	        		NetworkAddress net1 = new NetworkAddress(ip,0);
 	        		Player.put(currClient-1, net1);
-	        		//toclientpacket.setPlayers(currClient-1,net1);
-		        	//initialize and get ready for game to begin soon
+
+		        	//Initialize array of output streams and get ready for game to begin soon
 		        	toplayer[currClient-1] = new ObjectOutputStream(clients.get(currClient-1).getClientSocket().getOutputStream());
-		        	//toplayer[currClient-1] = new ObjectOutputStream(clients.get(currClient-1).getClientIP();
+
+		        	//Send JOIN packet to new player
 		        	toplayer[currClient-1].writeObject(toclientpacket);
 	        	}
 	        }
         }
 	    else
         {
+	    	//Start listening for recovery SEQ_REQ requests from players in past game
         	MazewarServerRecoverThread temp = new MazewarServerRecoverThread(serverSocket);
         	temp.start();
         }
@@ -136,7 +145,7 @@ public class MazewarServer {
         
         /*
          * At this point of time all the clients have received the seed number and are ready to START the game
-         * the for loop command all the clients to START
+         * The for loop commands all the clients to START
          */
         if(!recover)
         {
@@ -158,7 +167,6 @@ public class MazewarServer {
 		 *  Queue i.e. in the arraylist <serverQueue> and the topmost packet needs to be broadcasted to 
 		 *  all the clients
 		 */
-        //List<MazewarPacket> Queue = MazewarServerHandlerThread.serverQueue;
         while (listening) {
         	synchronized(MazewarServerHandlerThread.serverQueue) {
         		if(MazewarServerHandlerThread.serverQueue.isEmpty()){
@@ -166,24 +174,15 @@ public class MazewarServer {
                     //System.out.println("Queue EMPTY");
         		}
         		else{
-        			//System.out.println("QUEUE IS NONEMPTY");
+        			//Clients only send sequencer requests for sequence number, so we can assume without checking
         			MazewarPacket toclientpacket =  MazewarServerHandlerThread.serverQueue.remove(topindex);
-            		//broadcasting this packet, so send it to all the clients
-            		/*for(int i =0;i<waitForNumClients;i++) {
-            			try
-            			{
-            				toplayer[i].writeObject(toclientpacket);
-            			}
-            			catch(IOException ioe)
-            			{
-            				//Client must have disconnected.. Hide the error though.
-            			}
-            		}*/
+            		
         			seqno++;
         			
         			toclientpacket.setSeqNo(seqno);
         			toplayer[toclientpacket.getPlayerID()].writeObject(toclientpacket);
         			
+        			//Save sequence number to disk for fault tolerance
         			FileOutputStream fout =  new FileOutputStream("server.dat");
         			PrintStream pout = new PrintStream (fout);
         			pout.println(seeds);
@@ -193,10 +192,7 @@ public class MazewarServer {
         		}	
         	}
         }
-        serverSocket.close();
-        
-        //Send JOIN packet to all clients with their initial position (they know their own ID from START)
-        
+        serverSocket.close();        
     }
 
 }

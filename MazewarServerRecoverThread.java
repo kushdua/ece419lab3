@@ -28,9 +28,11 @@ public class MazewarServerRecoverThread extends Thread {
 
 	public void run() {
 		MazewarServerHandlerThread temp;
+		//Keep on listening for clients up to maximum number server was started for
 		while(MazewarServer.currClient!=MazewarServer.waitForNumClients)
 		{
 			try {
+				//Listen for incoming connections
 				temp = new MazewarServerHandlerThread(socket.accept());
 	
 				MazewarPacket fromclientpacket=null;
@@ -41,8 +43,10 @@ public class MazewarServerRecoverThread extends Thread {
 						if(fromclientpacket.getAction()==MazewarPacket.ACTION_REQ_SEQ)
 						{
 							//Wait for SEQ_REQUEST and put HandlerThread in appropriate place based on received playerID
+							//This is one of original players when failure occured.
 							synchronized(MazewarServer.clients)
 					    	{
+								//Update server structures similarly to join procedure in MazewarServer
 								MazewarServer.currClient++;
 								int playerID=fromclientpacket.getPlayerID();
 								MazewarServer.clients.put(playerID,temp);
@@ -56,11 +60,13 @@ public class MazewarServerRecoverThread extends Thread {
 					        	//initialize and get ready for game to begin soon
 					        	MazewarServer.toplayer[playerID] = new ObjectOutputStream(MazewarServer.clients.get(playerID).getClientSocket().getOutputStream());
 					        	
+					        	//Update and respond to sequence number request
 					        	MazewarServer.seqno++;
 					        	
 					        	fromclientpacket.setSeqNo(MazewarServer.seqno);
 								MazewarServer.toplayer[playerID].writeObject(fromclientpacket);
 		
+								//Save sequence number to disk for fault tolerance
 					        	FileOutputStream fout =  new FileOutputStream("server.dat");
 								PrintStream pout = new PrintStream (fout);
 								pout.println(MazewarServer.seeds);
@@ -70,6 +76,12 @@ public class MazewarServerRecoverThread extends Thread {
 								
 								break;
 					    	}
+						}
+						else
+						{
+							//Close connection and listen for more clients, as this was not one of the original clients before failure
+							temp.getClientSocket().close();
+							break;
 						}
 					}
 				} catch (ClassNotFoundException e) {

@@ -281,7 +281,7 @@ public class Mazewar extends JFrame {
     					}
     					else if(packet.getAction()==MazewarPacket.ACTION_START)
     					{
-//Mazewar.printLn("Got action_start message");
+    						//Mazewar.printLn("Got action_start message");
     						//TODO: Create connections to other clients based on packet contents from START message
     						synchronized(clientSockets)
     						{
@@ -293,22 +293,18 @@ public class Mazewar extends JFrame {
     						        int id=(Integer) pairs.getKey();
     						        NetworkAddress value=(NetworkAddress) pairs.getValue();
     						        //Add even localhost (GUI) client, so event application code doesn't have to be repeated
-Mazewar.printLn("MW Trying to connect to client "+id+" at "+value.address+":"+Mazewar.GAME_PORT);
+    						        Mazewar.printLn("MW Trying to connect to client "+id+" at "+value.address+":"+Mazewar.GAME_PORT);
 						        	MazewarClientHandlerThread temp = new MazewarClientHandlerThread(new Socket(value.address, Mazewar.GAME_PORT+id));
     						        if(clientSockets.containsKey(value.address)==false)
     						        {
-//Mazewar.printLn("MW putting socket into array");
     						        	clientSockets.put(id,temp);
-    						        	//Mazewar.printLn("MW before getting OS");
     						        	temp.toPlayer=new ObjectOutputStream(temp.getClientSocket().getOutputStream());
-    						        	//Mazewar.printLn("MW before getting IS");
     						        	temp.fromplayer=new ObjectInputStream(temp.getClientSocket().getInputStream());
-    						        	//Mazewar.printLn("MW after getting IS");
     						        	temp.start();
     						        }
     						    }
     						}
-//Mazewar.printLn("ack joined = "+ackJoined+", total num players client is waiting for = "+numplayers+" and list size = "+clientSockets.size());
+    						
     						//Set up maze structures on START message, but wait for SPAWN
     						//of other players before starting gameplay
     						if(ackJoined==true && clientID!=-1)
@@ -338,9 +334,10 @@ Mazewar.printLn("MW Trying to connect to client "+id+" at "+value.address+":"+Ma
 										e.printStackTrace();
 									}
 				                }
-//Mazewar.printLn("Before sending spawn");
+				                
+				                //Send spawn for local client to all other players
 			                	Mazewar.sendSpawn(Mazewar.getSequenceNumber());
-//Mazewar.printLn("Sent spawn");
+			                	
 				                break;
     						}
     						else
@@ -352,6 +349,7 @@ Mazewar.printLn("MW Trying to connect to client "+id+" at "+value.address+":"+Ma
     					}
     				}
 
+    				//Process SPAWN for all other game clients (before displaying and starting the actual game)
     				while(true)
     				{
     					if(queue.isEmpty())
@@ -365,10 +363,10 @@ Mazewar.printLn("MW Trying to connect to client "+id+" at "+value.address+":"+Ma
     					}
     					else
     					{
-							//Remove top entry
+							//Wait until expected sequence number message is present then dequeue it
 							while(queue.containsKey(prevSeq+1)==false)
 							{
-								Mazewar.printLn("WAITING FOR SPAWN2");
+								Mazewar.printLn("WAITING FOR SPAWN");
 	    						try {
 									Thread.sleep(0,1000);
 								} catch (InterruptedException e) {
@@ -534,7 +532,7 @@ Mazewar.printLn("MW Trying to connect to client "+id+" at "+value.address+":"+Ma
     					
     					if(queue.isEmpty() || queue.containsKey(prevSeq+1)==false)
     					{
-//Mazewar.printLn("Thought queue was nonempty but couldn't find "+(prevSeq+1)+"key.");
+    						//Mazewar.printLn("Thought queue was nonempty but couldn't find "+(prevSeq+1)+"key.");
     						continue;
     					}
     					else
@@ -542,7 +540,7 @@ Mazewar.printLn("MW Trying to connect to client "+id+" at "+value.address+":"+Ma
     						//Process events from queue
         					synchronized(queue)
         					{
-//Mazewar.printLn("Removed key "+(prevSeq)+" from queue");
+        						//Mazewar.printLn("Removed key "+(prevSeq)+" from queue");
         						packet=queue.remove(++prevSeq);
         					}
     					}
@@ -863,6 +861,10 @@ Mazewar.printLn("MW Trying to connect to client "+id+" at "+value.address+":"+Ma
             }
         }
         
+        /**
+         * Obtain sequence number from centralized sequencer component.
+         * @return	Sequence number integer for use in broadcasting events.
+         */
         public static int getSequenceNumber()
         {
         	MazewarPacket pts = new MazewarPacket();
@@ -875,7 +877,7 @@ Mazewar.printLn("MW Trying to connect to client "+id+" at "+value.address+":"+Ma
 				
 				while(true)
 				{
-	Mazewar.printLn("Before waiting to read given sequence number");
+					Mazewar.printLn("Before waiting to read given sequence number");
 					packet=(MazewarPacket)(pin.readObject());
 					
 					if(packet==null)
@@ -884,11 +886,12 @@ Mazewar.printLn("MW Trying to connect to client "+id+" at "+value.address+":"+Ma
 					//If packet is not next expected, queue it until you receive this next one.
 					if(packet.getAction()==MazewarPacket.ACTION_REQ_SEQ)
 					{
-	Mazewar.printLn("Received assigned seqNo of "+packet.getSeqNo());
+						Mazewar.printLn("Received assigned seqNo of "+packet.getSeqNo());
 						return packet.getSeqNo();
 					}
 				}
     		} catch (SocketException e) {
+    			//Reconnect and obtain sequence number
 				while(true)
 				{
 	    			//Open connection and save In/Out stream objects for future communication
@@ -912,7 +915,6 @@ Mazewar.printLn("MW Trying to connect to client "+id+" at "+value.address+":"+Ma
 						
 						MazewarPacket packet=null;
 						
-						//Try to reconnect + obtain sequence number
 						while((packet=(MazewarPacket)(pin.readObject()))!=null)
 						{
 							if(packet.getAction()==MazewarPacket.ACTION_REQ_SEQ)
@@ -929,6 +931,7 @@ Mazewar.printLn("MW Trying to connect to client "+id+" at "+value.address+":"+Ma
 					}
 				}
     		} catch (EOFException e4) {
+    			//Reconnect and obtain sequence number
 				while(true)
 				{
 	    			//Open connection and save In/Out stream objects for future communication

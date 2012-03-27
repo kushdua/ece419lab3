@@ -38,7 +38,9 @@ Our Design and Differences from Team Design document:
 	players in the game. The message only lists the playerID and Network address combinations, since local clients
 	can calculate the player listening port. We assume game ports to start at 8192 and increment based on the playerID
 	assigned - i.e. player 0 listens on port 8192 for event messages from all other players; player 1 listens on 8193,
-	etc. This requires the server to be listening on a different port (e.g. 8000).
+	etc. This requires the server to be listening on a different port (e.g. 8000). Assuming low number of players and
+	availability of port numbers in that range, this assumption would be sufficient and we would not overflow available
+	port numbers; this is done to ensure uniqueness in port numbers selected by different players (if done independently).
 	
 	Before beginning the game clients need to establish connections to each other. Spawning of players is done locally
 	and broadcast to all other connected players (not by a centralized source). After all clients have spawned (based on
@@ -62,7 +64,8 @@ Our Design and Differences from Team Design document:
 	(i.e. when requesting a sequence number for a local event) and completed reconnection.
 	
 	Our implementation requires no seed parameter, as current seed, max number of players and current sequence number are saved
-	to the "server.dat" file on disc used for later recovery if command line switch is specified when starting the server.
+	to the "server.dat" file on disc used for later recovery if command line switch is specified when starting the server. They
+	are saved on each event that reaches the server (i.e. each client request for a sequence number).
 
 ----------------------------------------------------
 Re-evaluation of design including above differences:
