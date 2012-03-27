@@ -57,7 +57,7 @@ public class Mazewar extends JFrame {
 		/**
 		 * Boolean mode for whether or not to print debug messages through printLn function in Mazewar.
 		 */
-		private static boolean debugMode=true;
+		private static boolean debugMode=false;
 	
         /**
          * The default width of the {@link Maze}.
@@ -277,7 +277,7 @@ public class Mazewar extends JFrame {
     			    		MazewarClientServer tempServer = new MazewarClientServer(Mazewar.GAME_PORT+clientID);
     			    		tempServer.start();
     						
-    						System.out.println("Client joined the game. Waiting for other players to join before starting...");
+    						Mazewar.printLn("Client joined the game. Waiting for other players to join before starting...");
     					}
     					else if(packet.getAction()==MazewarPacket.ACTION_START)
     					{
@@ -514,7 +514,7 @@ Mazewar.printLn("MW Trying to connect to client "+id+" at "+value.address+":"+Ma
 							}
 							else
 							{
-								System.err.println("Received packet type "+packet.getType()+" action "+packet.getAction()+" instead of SPAWN. Dropping it.");
+								Mazewar.printLn("Received packet type "+packet.getType()+" action "+packet.getAction()+" instead of SPAWN. Dropping it.");
 							}
     					}
     				}

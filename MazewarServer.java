@@ -66,21 +66,35 @@ public class MazewarServer {
     		FileReader fis = new FileReader(fin);  
     		BufferedReader bis = new BufferedReader(fis);
     		String line = bis.readLine();
-    		if(line!=null && line !="")
+    		try
     		{
-    			seeds=Integer.parseInt(line.trim());
+	    		if(line!=null && line !="")
+	    		{
+	    			seeds=Integer.parseInt(line.trim());
+	    		}
+	    		
+	    		line=bis.readLine();
+	    		if(line!=null && line !="")
+	    		{
+	    			waitForNumClients=Integer.parseInt(line.trim());
+	    		}
+	    		
+	    		line=bis.readLine();
+	    		if(line!=null && line !="")
+	    		{
+	    			seqno=Integer.parseInt(line.trim());
+	    		}
     		}
-    		
-    		line=bis.readLine();
-    		if(line!=null && line !="")
+    		catch(NumberFormatException nfe)
     		{
-    			waitForNumClients=Integer.parseInt(line.trim());
-    		}
-    		
-    		line=bis.readLine();
-    		if(line!=null && line !="")
-    		{
-    			seqno=Integer.parseInt(line.trim());
+    			System.err.println("Invalid recovery file contents! Server cannot recover operation.");
+        		
+    			if(bis!=null)
+    			{
+    			bis.close();
+    			}
+        		
+    			System.exit(-1);
     		}
     		
     		bis.close();
@@ -93,6 +107,7 @@ public class MazewarServer {
 	        	{
 					//Continuously listen for and accept client connection requests
 		        	clients.put(currClient++,new MazewarServerHandlerThread(serverSocket.accept()));
+		        	clients.get(currClient-1).myID=(currClient-1);
 		        	clients.get(currClient-1).start();
 	        		MazewarPacket toclientpacket = new MazewarPacket();
 	        		toclientpacket.setAction(MazewarPacket.ACTION_JOIN);

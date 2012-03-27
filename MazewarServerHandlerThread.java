@@ -12,7 +12,7 @@ import java.util.List;
 public class MazewarServerHandlerThread extends Thread {
 	private Socket socket = null;
 	private String IP = null;
-	private int myID=-1;
+	public int myID=-1;
 	
 	//Global list of events received at the server
 	public static final List<MazewarPacket> serverQueue=Collections.synchronizedList(new ArrayList<MazewarPacket>());
@@ -23,14 +23,17 @@ public class MazewarServerHandlerThread extends Thread {
 		super("MazewarServerHandlerThread");
 		this.socket = accept;
 		this.IP = accept.getInetAddress().getHostAddress();
-		try {
-			fromplayer = new ObjectInputStream(socket.getInputStream());
-		} catch (IOException e) {
-			System.err.println("Could not retrieve OIS for client connected to sequencer.");
+		while(fromplayer==null)
+		{
+			try {
+				fromplayer = new ObjectInputStream(socket.getInputStream());
+			} catch (IOException e) {
+				Mazewar.printLn("Could not retrieve OIS for client connected to sequencer.");
+			}
 		}
-		System.out.println("the IP address is "+this.IP);
+		Mazewar.printLn("the IP address is "+this.IP);
 		//this.IP= accept.getRemoteSocketAddress().toString();
-		System.out.println("Created new Thread to handle remote server client");
+		Mazewar.printLn("Created new Thread to handle remote server client");
 	}
 
 	public void run() {
@@ -48,8 +51,14 @@ public class MazewarServerHandlerThread extends Thread {
 			}	
 		} catch (SocketException e) {
 			System.err.println("SocketException generated. Client most likely disconnected.");
+			MazewarServer.clients.remove(myID);
+			MazewarServer.Player.remove(myID);
+			MazewarServer.toplayer[myID]=null;
 		} catch (EOFException e) {
 			System.err.println("EOFException generated. Client most likely disconnected.");
+			MazewarServer.clients.remove(myID);
+			MazewarServer.Player.remove(myID);
+			MazewarServer.toplayer[myID]=null;
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

@@ -21,7 +21,7 @@ public class MazewarClientHandlerThread extends Thread {
 		//for (StackTraceElement ste : Thread.currentThread().getStackTrace()) {
 		//    Mazewar.println(ste + "\n");
 		//}
-		System.out.println("Created new Thread to handle remote server client");
+		//System.out.println("Created new Thread to handle remote server client");
 	}
 
 	public void run() {

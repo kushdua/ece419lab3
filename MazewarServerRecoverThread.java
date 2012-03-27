@@ -37,7 +37,7 @@ public class MazewarServerRecoverThread extends Thread {
 				try {
 					//System.out.println("Reconnected "+MazewarServer.currClient+" out of "+MazewarServer.waitForNumClients+" clients.");
 					while((fromclientpacket = (MazewarPacket) temp.fromplayer.readObject())!=null){
-						//System.out.println("Received packet from reconnected user of action type "+fromclientpacket.getAction());
+						//System.out.println("Received packet from reconnected user of action type "+fromclientpacket.getAction()+" type "+fromclientpacket.getType());
 						if(fromclientpacket.getAction()==MazewarPacket.ACTION_REQ_SEQ)
 						{
 							//Wait for SEQ_REQUEST and put HandlerThread in appropriate place based on received playerID

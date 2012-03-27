@@ -1,9 +1,9 @@
-ECE419S 2012 Lab 2 - Mazewar Distributed game using Centralized server
-Date: February 26, 2012			   Due Date: February 27, 2012
+ECE419S 2012 Lab 3 - Mazewar de-centralized game using lighweight sequencer component
+Date: March 27, 2012			   Due Date: March 27, 2012
 -----------
 Developers:
 -----------
-Bozhidar Lenchov 	: Student Number 995959431
+Bozhidar Lenchov: Student Number 995959431
 Kush Dua		: Student Number 996081957
 
 -----------------
@@ -11,95 +11,83 @@ Run instructions:
 -----------------
 Compile- run "make" - it will clean previous *class files (invoke clean rule) and recompile everything (all rule)
 
-Server - server.sh <port to listen on> <number of players to join before game starts>
+Server - server.sh <port to listen on> <number of players to join before game starts> [-recover]
 		 Note: <number of players...> is optional; if omitted, server waits for 4 players
+				-recover is optional (in that case, values for seed, number of players and current sequence number
+									  are read in from disc).
 		
-Client - run.sh <address of server> <port of server>
+Client - run.sh <address of server> <port of server> <0 for GUI client | 1 for RobotClient>
 
------------
-Our Design:
------------
-- Order of events is enforced by order for receival at server side. Server broadcasts event 1 to all clients
-  before broadcasting event 2, so along with TCPIP stream delivery, we're guaranteed the order of events on
-  the client side as well.
-  
-- The server waits until all players connect. When a player joins server replies with a JOIN message containing
-  clientID and random seed (same for all clients in the game) for constructing the maze. When all clients have
-  joined, server sends a START message, so each client can construct the maze (but not show it yet). Server then
-  broadcasts SPAWN messages so all clients can instantiate themselves (GUIClient) or other clients (RemoteClient)
-  for consistency before starting the game.
-  
-- After initiating the game, the server basically forwards events from its queue. Threads listening to incoming
-  events from game clients (in the form of network packets) insert events in this server queue, which are then
-  broadcast to all clients.
-     - Server broadcasts events in order (broadcast event 1 to all clients before broadcasting event 2)
-        + (positive) : consistent event order across player screens
-        - (negative) : visual lag to clients that are closer to the server, since they have to wait for message
-        			   to be received by clients further away for that event, before next event can be sent
-        =>(solution) : HAVE PLAYERS JOIN SERVER BY REGION (AS CLOSE AS POSSIBLE TO CLIENTS IN SAME GAME)
-  
-- On GUI events, the client sends a network message only.
+------------------------
+Features of our design:
+------------------------
+1. Basics outlined in handout. Consistent gameplay with lightweight sequencer component for game start/event ordering.
+2. Support for RobotClient's.
+3. Fault tolerance support (i.e. recover option on server)
+	3.1. Note: Due to not supporting Dynamic leave/join, we do not expect player quits after a crash. Additionally, we
+			   do not expect clients other than the ones in the game to attempt rejoin when server recovers (since
+			   we have no dynamic joins, we have a limited number of game spots for these previous game players, and
+			   we expect rejoin sequence to be followed, not a game join one).
 
-- On death, the GUIClient on the client that died calculates a new position and sends a SPAWN message to server
-  (i.e. deaths are processed locally and right away, even for RemotePlayers. All game players (GUIClient and
-   RemoteClient alike) are respawned when a SPAWN message from a client is received.
-   
-- If an action (spawn, movement, fire) cannot be performed when the message is received, we discard the message
-  (and we are guaranteed all clients will reject it too because events are sent in order from the server).
-  - In the case of a SPAWN message, when the client that generated the SPAWN sees it's own player ID in the
-  	packet (i.e. it sent the original SPAWN message), and it rejects it as it cannot apply it (something else
-  	is in the cell for respawn), it generates a new SPAWN point and sends it to the server for broadcast.
+------------------------------------------------------
+Our Design and Differences from Team Design document:
+------------------------------------------------------
+1. 	During Initial setup of the game, sequencer acts as registration server. Players connect and sequencer replies with
+	JOIN message containing playerID, seed value and number of players in the game. When the server acquired the number
+	of expected players for the game, it sends a START message to all, containing a list of network addresses for all
+	players in the game. The message only lists the playerID and Network address combinations, since local clients
+	can calculate the player listening port. We assume game ports to start at 8192 and increment based on the playerID
+	assigned - i.e. player 0 listens on port 8192 for event messages from all other players; player 1 listens on 8193,
+	etc. This requires the server to be listening on a different port (e.g. 8000).
+	
+	Before beginning the game clients need to establish connections to each other. Spawning of players is done locally
+	and broadcast to all other connected players (not by a centralized source). After all clients have spawned (based on
+	maximum number of players parameter) the game and further game event message exchange can begin.
 
-- Actions are applied only when clients receive a network packet event message from the server (movement, fire,
-  spawn are sample events).
-  
-- Some further decisions (such as implementing network messages for projectile movement, sent by owner of
-  projectile) are described in corner cases considered during design and/or development and testing.
+2. 	Our implementation has no LocalQueue, but instead each client obtains a sequence number from the sequencer when a
+	local event is generated. When a sequence response is received, it broadcasts the event with the given sequence
+	number to all game players. While in this period other local events cannot occur, due to low LAN latencies we feel
+	this will not be a problem. Additionally, this helps curb the LocalQueue size, since if events are queued faster than
+	they could be sent (the purpose for this queue), the queue size will grow indefinitely, and/or we might see bursts of
+	events being applied at once.
+	
+3. 	We have no explicit register packet. Instead we follow connection established --> JOIN packet --> START packet after
+	which clients have all game information and can connect to other players prior to starting the game (no dynamic join/leave).
+	
+4. 	For failure tolerance, client reconnection to server does not timeout (continues indefinitely). Server listening thread
+	accepts connections and detects recovering player by its initial packet being a SEQ_REQ (sequence number request), since this
+	is the only event on which a player could've detected the sequencer was down initially (and we attempt reconnection there).
+	As mentioned above, since we did not implement dynamic join/leave, we assume only the original players connect and there is
+	no new player that might try to take their spot by reconnecting before the "original" players have detected sequencer is down
+	(i.e. when requesting a sequence number for a local event) and completed reconnection.
+	
+	Our implementation requires no seed parameter, as current seed, max number of players and current sequence number are saved
+	to the "server.dat" file on disc used for later recovery if command line switch is specified when starting the server.
 
----------------------------------------------------
-How it differs from proposed design in lab handout:
----------------------------------------------------
-- No sequence numbers are used on the server side, as server queue operations are synchronized, TCPIP ensures
-  in order transmission of event messages, and server broadcasts events in order (send event 1 to all clients
-  before sending event 2)
+----------------------------------------------------
+Re-evaluation of design including above differences:
+----------------------------------------------------
+1.	Although registration requires same number of packets (JOIN+START vs proposed Register+Name exchange), spawning done locally
+	by each node and broadcasted to all other players takes up more packets vs one player deciding spawn locations for all players
+	and broadcasting those messages to everyone (i.e. N^2 messages in our implementation vs N in proposed in total). We decided to
+	proceed this way, as having one client decide spawn location for all places additional responsibility + failure point if that
+	node fails in the middle of announcing spawn locations. Additionally, in tested scenario assuming maximum of 4 players on a LAN
+	this implementation still achieves functionality and acceptable performance. This was not altered to reuse our design from Lab 2.
+	
+	Reconnecting to recovering server is done through piggybacking on SEQ_REQ messages - no extra registration packets required, and
+	sequence number response is returned by server after accepting recovering player's connection.
+	
+	No special maintenance is done. Since no dynamic leave/join was used, no further messages are sent then, as all players detect
+	when other players/server go down. If server goes down, players try to reconnect indefinitely while requesting a sequence number.
 
-- No client side queues were implemented, as TCPIP ensures no gaps in received messages (as opposed to UDP),
-  and if messages are received while display operation for a previous message is performed, those incoming
-  messages are buffered implicitly by the hardware in the OSI Network model
+2.	Only extra messages that differ from proposed design are for initial SPAWN. Due to their number being much lower over the game
+	duration, they have little effect in slowing down the game (technically none, as game does not start before all SPAWN are received).
+	On recovery, our design described by the design document and the differences above requires no explicit registration packets, but
+	simply a request for a sequence number. All other considerations are described in design document (i.e. PROJECTILE_MOVE).
 
--------------  
-Corner Cases:
--------------
-As mentioned above, order of event processing at the client side is ultimately determined by event receiving (and
-thereby processing from the queue) at the server side. Since server broadcasts events in order (broadcast event 1
-to all clients before broadcasting event 2), screens and gameplay is consistent across all clients. The following
-cornercases and associated decisions were identified to ensure consistent gameplay, while minimizing network
-congestion with gameplay messages:
+3.	With higher latency, having no LocalQueue for user-generated events might mean longer periods between which users will be able to
+	press keys and generate movement/fire game events. However, we would have same problem with display event latency and high time
+	between applying consecutive events, as communication with sequencer to obtain sequence number for sending event will be greater.
+	PROJECTILE_MOVE messages will incur the most cost, but they are required for consistency across player screens.
 
-1. Movement or fire message sent before GUIClient detects its death by projectile (so PROJECTILE_MOVE message causing
-   death is received shortly after sending MOVE message)
-     - Movement cannot possibly be applied after client has respawned, as:
-     	1. GUIClient will be killed on each client's screen
-     	2. Movement message will be received (but since client is dead, it cannot be applied, so it is discarded)
-     	   - Movement message is received after PROJECTILE_MOVE and before SPAWN on all clients, as events are
-     	     broadcasted in order of receival to all clients before next event is broadcasted by the server,
-     	     and TCPIP guarantees delivery
-     	3. SPAWN message for killed client is received and processed by all nodes
-     -> No visual bug of movement occurring after respawning also since the killed client sends SPAWN after
-        MOVEMENT message due to TPCIP stream delivery
-     - Network delay not a factor since server transmits events in order (event 1 broadcasted to all before
-       event 2 begins broadcasting) --> might cause visual lag as described in design, but is consistent...
-        
-2. Similar to the discussion of corner case 1, if projectile movement still was handled by each client:
-     i.e. client 1's projectile thread handles movement of projectiles for itself, as well as remote players
-     (assume there are still FIRE messages transmitted to indicate client 1 or client 2 fired, but movement is
-     handled locally by each client)
-   , this might cause discrepancies as MOVE message could be received fast by client 1 (which detects and
-   processes a kill in its maze display), whereas the MOVE message is delayed when received by client 2, causing
-   the projectile to miss the target (no kill), as it has gone past the point where the other client would've
-   stepped in the path of the projectile.
-   
-   By having each client in the game handle projectiles locally only for itself, and send network messages every
-   200ms (its Projectile movement Thread), we're guaranteed movement for that projectile will be consistent
-   accross game screens, as projectile movement events are processed in order of receiving by the server.
-   
+4.	No changes from design document.
