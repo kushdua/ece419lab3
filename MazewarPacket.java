@@ -1,5 +1,6 @@
 import java.io.Serializable;
 import java.util.HashMap;
+import java.util.Hashtable;
 
 public class MazewarPacket implements Serializable {
 	//Type of MOVE messages
@@ -47,7 +48,7 @@ public class MazewarPacket implements Serializable {
 	/**
 	 * HashMap distributed on JOIN events containing connection info for all players
 	 */
-	private HashMap<Integer,NetworkAddress> players=null;
+	private Hashtable<Integer,NetworkAddress> players=null;
 	
 	/**
 	 * Random seed provided by server initially
@@ -131,12 +132,12 @@ public class MazewarPacket implements Serializable {
 		return maxplayer;
 	}
 
-	public HashMap<Integer,NetworkAddress> getPlayers() {
+	public Hashtable<Integer,NetworkAddress> getPlayers() {
 		return players;
 	}
 
-	public void setPlayers(HashMap<Integer,NetworkAddress> players) {
-		this.players = (HashMap<Integer, NetworkAddress>) players.clone();
+	public void setPlayers(Hashtable<Integer,NetworkAddress> players) {
+		this.players = (Hashtable<Integer, NetworkAddress>) players.clone();
 	}
 
 	public int getSeqNo() {

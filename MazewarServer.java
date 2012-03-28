@@ -2,6 +2,7 @@ import java.net.*;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Hashtable;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -19,7 +20,7 @@ public class MazewarServer {
     static int waitForNumClients=4;
 	//keeps tracks of number of clients currently joined the game
 	static int currClient=0;
-	static HashMap<Integer,NetworkAddress> Player= new HashMap<Integer, NetworkAddress>();
+	static Hashtable<Integer,NetworkAddress> Player= new Hashtable<Integer, NetworkAddress>();
 
     static ObjectOutputStream[] toplayer  = new ObjectOutputStream[waitForNumClients];
 	
