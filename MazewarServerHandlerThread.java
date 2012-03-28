@@ -73,14 +73,20 @@ public class MazewarServerHandlerThread extends Thread {
 			}	
 		} catch (SocketException e) {
 			System.err.println("SocketException generated. Client most likely disconnected.");
-			MazewarServer.clients.remove(myID);
-			MazewarServer.Player.remove(myID);
-			MazewarServer.toplayer[myID]=null;
+			if(myID!=-1)
+			{
+				MazewarServer.clients.remove(myID);
+				MazewarServer.Player.remove(myID);
+				MazewarServer.toplayer[myID]=null;
+			}
 		} catch (EOFException e) {
 			System.err.println("EOFException generated. Client most likely disconnected.");
-			MazewarServer.clients.remove(myID);
-			MazewarServer.Player.remove(myID);
-			MazewarServer.toplayer[myID]=null;
+			if(myID!=-1)
+			{
+				MazewarServer.clients.remove(myID);
+				MazewarServer.Player.remove(myID);
+				MazewarServer.toplayer[myID]=null;
+			}
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
