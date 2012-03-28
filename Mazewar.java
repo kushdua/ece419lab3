@@ -40,6 +40,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -153,7 +154,7 @@ public class Mazewar extends JFrame {
         /**
          * Linked blocking queue of received packets buffered until no gaps exist.
          */
-        public static Map<Integer,MazewarPacket> queue=Collections.synchronizedMap(new HashMap<Integer, MazewarPacket>());
+        public static Map<Integer,MazewarPacket> queue=Collections.synchronizedMap(new Hashtable<Integer, MazewarPacket>());
         
         /**
          * Global list of events received at the server
@@ -294,7 +295,7 @@ public class Mazewar extends JFrame {
     						//TODO: Create connections to other clients based on packet contents from START message
     						synchronized(clientSockets)
     						{
-    							HashMap<Integer,NetworkAddress> mp = packet.getPlayers();
+    							Hashtable<Integer,NetworkAddress> mp = packet.getPlayers();
     							
     						    Iterator it = mp.entrySet().iterator();
     						    while (it.hasNext()) {
