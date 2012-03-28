@@ -887,6 +887,12 @@ public class Mazewar extends JFrame {
 				
 				while(true)
 				{
+                	try {
+						Thread.sleep(50);
+					} catch (InterruptedException eeeee) {
+						// TODO Auto-generated catch block
+						eeeee.printStackTrace();
+					}
 					Mazewar.printLn("Before waiting to read given sequence number");
 					packet=(MazewarPacket)(pin.readObject());
 					
