@@ -224,8 +224,10 @@ public class MazeImpl extends Maze implements Serializable, ClientListener, Runn
        
         public synchronized void removeClient(Client client) {
                 assert(client != null);
+                if(client==null) return;
                 Object o = clientMap.remove(client);
                 assert(o instanceof Point);
+                if(o==null || !(o instanceof Point)) return;
                 Point point = (Point)o;
                 CellImpl cell = getCellImpl(point);
                 cell.setContents(null);
@@ -1103,6 +1105,29 @@ public class MazeImpl extends Maze implements Serializable, ClientListener, Runn
 				//Mazewar.printLn("cmf: Client at ("+dp.getX()+","+dp.getY()+") cannot move to ("+newPoint.getX()+","+newPoint.getY()+") as it is occupied");	
 				return false;
 			}
+			return true;
+		}
+
+		@Override
+		public boolean canFire(Client client) {
+			if(client==null)
+				return false;
+			
+            // If the client already has a projectile in play, fail.
+            if(clientFired.contains(client)) {
+                    return false;
+            }
+            
+            Point point = getClientPoint(client);
+            if(point==null) return false;
+            Direction d = getClientOrientation(client);
+            CellImpl cell = getCellImpl(point);
+            
+            /* Check that you can fire in that direction */
+            if(cell.isWall(d)) {
+                    return false;
+            }
+            
 			return true;
 		}
 }

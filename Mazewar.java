@@ -281,6 +281,15 @@ public class Mazewar extends JFrame {
     					}
     					else if(packet.getAction()==MazewarPacket.ACTION_START)
     					{
+						try
+						{
+							Thread.sleep(2000);
+						}
+						catch(InterruptedException ioee)
+						{
+
+						}
+
     						//Mazewar.printLn("Got action_start message");
     						//TODO: Create connections to other clients based on packet contents from START message
     						synchronized(clientSockets)
@@ -293,10 +302,10 @@ public class Mazewar extends JFrame {
     						        int id=(Integer) pairs.getKey();
     						        NetworkAddress value=(NetworkAddress) pairs.getValue();
     						        //Add even localhost (GUI) client, so event application code doesn't have to be repeated
-    						        Mazewar.printLn("MW Trying to connect to client "+id+" at "+value.address+":"+(Mazewar.GAME_PORT+id));
-						        	MazewarClientHandlerThread temp = new MazewarClientHandlerThread(new Socket(value.address, Mazewar.GAME_PORT+id));
     						        if(clientSockets.containsKey(value.address)==false)
     						        {
+    						        Mazewar.printLn("MW Trying to connect to client "+id+" at "+value.address+":"+(Mazewar.GAME_PORT+id));
+						        	MazewarClientHandlerThread temp = new MazewarClientHandlerThread(new Socket(value.address, Mazewar.GAME_PORT+id));
     						        	clientSockets.put(id,temp);
     						        	temp.toPlayer=new ObjectOutputStream(temp.getClientSocket().getOutputStream());
     						        	temp.fromplayer=new ObjectInputStream(temp.getClientSocket().getInputStream());
@@ -865,7 +874,7 @@ public class Mazewar extends JFrame {
          * Obtain sequence number from centralized sequencer component.
          * @return	Sequence number integer for use in broadcasting events.
          */
-        public static int getSequenceNumber()
+        public synchronized static int getSequenceNumber()
         {
         	MazewarPacket pts = new MazewarPacket();
         	pts.setAction(MazewarPacket.ACTION_REQ_SEQ);

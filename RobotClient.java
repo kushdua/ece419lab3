@@ -134,7 +134,7 @@ public class RobotClient extends LocalClient implements Runnable {
                 		}
 
                         // Shoot at things once and a while.
-                        if(randomGen.nextInt(10) == 1) {
+                        if(randomGen.nextInt(10) == 1 && Mazewar.maze.canFire(this)) {
                     		try {
     							Mazewar.sendFire(Mazewar.getSequenceNumber());
     						} catch (IOException e1) {

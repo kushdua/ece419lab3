@@ -150,5 +150,12 @@ public abstract class Maze {
 	 * @return	True if possible, false if not being able to move forward
 	 */
 	public abstract boolean canMoveForward(Client robotClient);
+
+	/**
+	 * Check whether client can fire (if there's projectiles in play or not)
+	 * @param guiClient	Client object
+	 * @return	True if can fire, false if not
+	 */
+	public abstract boolean canFire(Client client);
     
 }

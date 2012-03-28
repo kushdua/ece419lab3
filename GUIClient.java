@@ -85,7 +85,7 @@ public class GUIClient extends LocalClient implements KeyListener {
 							// TODO Auto-generated catch block
 							e1.printStackTrace();
 						}
-                } else if(e.getKeyCode() == KeyEvent.VK_SPACE) {
+                } else if(e.getKeyCode() == KeyEvent.VK_SPACE && Mazewar.maze.canFire(this)) {
                         //fire();
                 		try {
 							Mazewar.sendFire(Mazewar.getSequenceNumber());
