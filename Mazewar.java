@@ -76,7 +76,7 @@ public class Mazewar extends JFrame {
          */
         private int mazeSeed = 42;
         
-        public final static int GAME_PORT=27892;
+        public final static int GAME_PORT=7000;
 
         /**
          * The {@link Maze} that the game uses.

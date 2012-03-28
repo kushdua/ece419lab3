@@ -23,23 +23,25 @@ public class MazewarClientServer extends Thread {
     	//Listen and accept incoming connections from other players in the game
         ServerSocket serverSocket = null;
 		try {
-			//System.out.println("Client listening for other players on port "+gamePort);
+			Mazewar.printLn("Client listening for other players on port "+gamePort);
 			serverSocket = new ServerSocket(gamePort);
 
-	        while(true)
-	        {
-	        	MazewarClientHandlerThread temp = new MazewarClientHandlerThread(serverSocket.accept());
-	        	//System.out.println("MWCS before getting IS");
-				temp.fromplayer=new ObjectInputStream(temp.getClientSocket().getInputStream());
-	        	//System.out.println("MWCS after getting OS");
-				temp.toPlayer=new ObjectOutputStream(temp.getClientSocket().getOutputStream());	
+			while(true)
+			{
+				Mazewar.printLn("!!! Client listening for other players on port "+gamePort);
+				MazewarClientHandlerThread temp = new MazewarClientHandlerThread(serverSocket.accept());
+				//System.out.println("MWCS before getting IS");
+					temp.fromplayer=new ObjectInputStream(temp.getClientSocket().getInputStream());
 				//System.out.println("MWCS after getting OS");
-				temp.start();
-	        }
+					temp.toPlayer=new ObjectOutputStream(temp.getClientSocket().getOutputStream());	
+					//System.out.println("MWCS after getting OS");
+					temp.start();
+			}
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			if(serverSocket!=null)
 			{
+				Mazewar.printLn("Closing server socket at client side");
 				try {
 					serverSocket.close();
 				} catch (IOException e1) {

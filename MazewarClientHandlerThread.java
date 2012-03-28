@@ -41,7 +41,7 @@ public class MazewarClientHandlerThread extends Thread {
 							}
 						}
 					}
-//Mazewar.printLn("Put message of type "+fromclientpacket.getAction()+", type "+fromclientpacket.getType()+" sequence number "+fromclientpacket.getSeqNo()+" in queue when expecting "+Mazewar.prevSeq);
+Mazewar.printLn("Put message of type "+fromclientpacket.getAction()+", type "+fromclientpacket.getType()+" sequence number "+fromclientpacket.getSeqNo()+" from clientID "+myNum+" in queue when expecting "+(Mazewar.prevSeq+1));
 					Mazewar.queue.put(fromclientpacket.getSeqNo(),fromclientpacket);
 	        	}
 			}	
