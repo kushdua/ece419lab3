@@ -290,7 +290,6 @@ public class Mazewar extends JFrame {
 							{
 	
 							}
-
     						//Mazewar.printLn("Got action_start message");
     						//TODO: Create connections to other clients based on packet contents from START message
     						synchronized(clientSockets)
