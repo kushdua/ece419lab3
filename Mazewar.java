@@ -281,14 +281,15 @@ public class Mazewar extends JFrame {
     					}
     					else if(packet.getAction()==MazewarPacket.ACTION_START)
     					{
-						try
-						{
-							Thread.sleep(2000);
-						}
-						catch(InterruptedException ioee)
-						{
-
-						}
+    						//Wait for all JOIN messages to reach other players
+							try
+							{
+								Thread.sleep(2000);
+							}
+							catch(InterruptedException ioee)
+							{
+	
+							}
 
     						//Mazewar.printLn("Got action_start message");
     						//TODO: Create connections to other clients based on packet contents from START message
