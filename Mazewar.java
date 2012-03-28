@@ -886,6 +886,8 @@ public class Mazewar extends JFrame {
 				
 				while(true)
 				{
+					//Space out network packets to reduce network load and
+					//lower probability of exceptions on same socket, etc
                 	try {
 						Thread.sleep(50);
 					} catch (InterruptedException eeeee) {
